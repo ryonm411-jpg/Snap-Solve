@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clipboard Image Reader</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --error: #ef4444;
+            --success: #22c55e;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            font-weight: 600;
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: transparent;
+        }
+
+        p {
+            color: var(--text-muted);
+            margin-bottom: 30px;
+            font-size: 1rem;
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: 500;
+            border-radius: 8px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            font-family: 'Inter', sans-serif;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .status {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            min-height: 20px;
+            transition: color 0.3s ease;
+        }
+
+        .status.error {
+            color: var(--error);
+        }
+
+        .status.success {
+            color: var(--success);
+        }
+
+        .image-container {
+            margin-top: 30px;
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            padding: 10px;
+            min-height: 300px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(15, 23, 42, 0.5);
+            transition: border-color 0.3s ease;
+            overflow: hidden;
+        }
+
+        .image-container:hover {
+            border-color: var(--primary);
+        }
+
+        .placeholder {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        img {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .ocr-container {
+            margin-top: 24px;
+            text-align: left;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .ocr-container h3 {
+            font-size: 1.1rem;
+            color: var(--text-main);
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+
+        .ocr-text {
+            width: 100%;
+            min-height: 120px;
+            background-color: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            resize: vertical;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .ocr-text:focus {
+            border-color: var(--primary);
+        }
+
+        .ocr-loading {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 12px;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .copy-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .copy-btn {
+            flex: 1;
+            padding: 10px 16px;
+            font-size: 0.88rem;
+            font-weight: 500;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s ease;
+            background-color: var(--card-bg);
+            color: var(--text-muted);
+        }
+
+        .copy-btn:hover {
+            border-color: var(--primary);
+            color: var(--text-main);
+            transform: translateY(-1px);
+        }
+
+        .copy-btn.active {
+            background-color: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Clipboard Reader</h1>
+        <p>Click the button below to paste an image from your clipboard.</p>
+        
+        <button id="paste-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+            Paste Image
+        </button>
+
+        <div id="status-message" class="status"></div>
+
+        <div class="image-container" id="image-container">
+            <div class="placeholder" id="placeholder">
+                Image will appear here
+            </div>
+            <img id="pasted-image" src="" alt="Pasted from clipboard" style="display: none;">
+        </div>
+
+        <div id="ocr-result-container" class="ocr-container" style="display: none;">
+            <h3>Extracted Text</h3>
+            <div id="ocr-loading" class="ocr-loading" style="display: none;">
+                <div class="spinner"></div> Processing image...
+            </div>
+            <textarea id="ocr-text" class="ocr-text" readonly placeholder="Extracted text will appear here..."></textarea>
+            <div class="copy-buttons" id="copy-buttons" style="display: none;">
+                <button id="copy-plain-btn" class="copy-btn active">📋 Copy Plain Text</button>
+                <button id="copy-latex-btn" class="copy-btn">∑ Copy as LaTeX</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const pasteBtn         = document.getElementById('paste-btn');
+            const statusMessage    = document.getElementById('status-message');
+            const imageContainer   = document.getElementById('image-container');
+            const placeholder      = document.getElementById('placeholder');
+            const pastedImage      = document.getElementById('pasted-image');
+            const ocrResultContainer = document.getElementById('ocr-result-container');
+            const ocrLoading       = document.getElementById('ocr-loading');
+            const ocrText          = document.getElementById('ocr-text');
+            const copyButtons      = document.getElementById('copy-buttons');
+            const copyPlainBtn     = document.getElementById('copy-plain-btn');
+            const copyLatexBtn     = document.getElementById('copy-latex-btn');
+
+            let currentPlainText = '';
+            let currentLatexText = '';
+
+            function cleanMathText(text) {
+                if (!text) return '';
+                return text
+                    .replace(/\s+/g, ' ')
+                    // Common OCR math misreads
+                    .replace(/l\s*\/\s*2/g, '1/2') 
+                    // Convert LaTeX commands to plain text words
+                    .replace(/\\int/g, 'integral ')
+                    .replace(/\\sum/g, 'sum ')
+                    .replace(/\\pi/g, 'pi')
+                    .replace(/\\theta/g, 'theta')
+                    .replace(/\\alpha/g, 'alpha')
+                    .replace(/\\beta/g, 'beta')
+                    .replace(/\\gamma/g, 'gamma')
+                    .replace(/\\infty/g, 'infinity')
+                    .replace(/\\sqrt(?:{([^}]+)})?/g, (m, p1) => p1 ? `sqrt(${p1})` : 'sqrt')
+                    .replace(/\\frac{([^}]+)}{([^}]+)}/g, '$1/$2')
+                    .replace(/\\pm/g, '±')
+                    .replace(/\\approx/g, '≈')
+                    .replace(/\\leq/g, '≤')
+                    .replace(/\\geq/g, '≥')
+                    .replace(/\\times/g, '×')
+                    .replace(/\\div/g, '÷')
+                    .replace(/\\circ/g, '°')
+                    // Convert unicode math symbols to text words
+                    .replace(/√/g, 'sqrt')
+                    .replace(/∫/g, 'integral ')
+                    .replace(/∑/g, 'sum ')
+                    .replace(/∞/g, 'infinity')
+                    // Formatting
+                    .replace(/(\d+)\s*\/\s*(\d+)/g, '$1/$2')
+                    .replace(/[{}]/g, '') // remove lingering LaTeX braces
+                    .trim();
+            }
+
+            function cleanLatex(text) {
+                if (!text) return '';
+                let latex = text
+                    .replace(/\s+/g, ' ')
+                    // Common OCR misreads
+                    .replace(/l\s*\/\s*2/g, '1/2')
+                    // Convert unicode math symbols to LaTeX
+                    .replace(/√/g, '\\sqrt')
+                    .replace(/∫/g, '\\int ')
+                    .replace(/∑/g, '\\sum ')
+                    .replace(/∞/g, '\\infty')
+                    .replace(/±/g, '\\pm')
+                    .replace(/≈/g, '\\approx')
+                    .replace(/≤/g, '\\leq')
+                    .replace(/≥/g, '\\geq')
+                    .replace(/×/g, '\\times')
+                    .replace(/÷/g, '\\div')
+                    .replace(/°/g, '^\\circ')
+                    // Convert plain text math words to LaTeX
+                    .replace(/\bpi\b/gi, '\\pi')
+                    .replace(/\btheta\b/gi, '\\theta')
+                    .replace(/\balpha\b/gi, '\\alpha')
+                    .replace(/\bbeta\b/gi, '\\beta')
+                    .replace(/\bgamma\b/gi, '\\gamma')
+                    .replace(/\bintegral\b/gi, '\\int ')
+                    .replace(/\bsum\b/gi, '\\sum ')
+                    .replace(/\binfinity\b/gi, '\\infty')
+                    .replace(/sqrt\(([^)]+)\)/gi, '\\sqrt{$1}')
+                    .replace(/\bsqrt\b/gi, '\\sqrt')
+                    // Formatting rules
+                    .replace(/(?<!\\frac{)(\d+)\s*\/\s*(\d+)/g, '\\frac{$1}{$2}') // avoid double fractioning
+                    .replace(/([a-zA-Z])\^([a-zA-Z0-9]+)/g, '$1^{$2}')
+                    .trim();
+                
+                // If it looks like an equation and isn't already wrapped, wrap it
+                if (/[=+\-*/\\]/.test(latex) && !latex.includes('\\[')) {
+                    latex = `\\[ ${latex} \\]`;
+                }
+                return latex;
+            }
+
+            function updateActiveButton(type) {
+                if (type === 'plain') {
+                    copyPlainBtn.classList.add('active');
+                    copyLatexBtn.classList.remove('active');
+                } else {
+                    copyLatexBtn.classList.add('active');
+                    copyPlainBtn.classList.remove('active');
+                }
+            }
+
+            function blobToBase64(blob) {
+                return new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+                        
+                        const MAX_WIDTH = 1200;
+                        const MAX_HEIGHT = 1200;
+                        
+                        if (width > height) {
+                            if (width > MAX_WIDTH) {
+                                height *= MAX_WIDTH / width;
+                                width = MAX_WIDTH;
+                            }
+                        } else {
+                            if (height > MAX_HEIGHT) {
+                                width *= MAX_HEIGHT / height;
+                                height = MAX_HEIGHT;
+                            }
+                        }
+                        
+                        canvas.width = width;
+                        canvas.height = height;
+                        
+                        const ctx = canvas.getContext('2d');
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        const base64String = canvas.toDataURL('image/jpeg', 0.8);
+                        resolve(base64String);
+                    };
+                    img.onerror = () => reject(new Error('Failed to load image for compression'));
+                    img.src = URL.createObjectURL(blob);
+                });
+            }
+
+            async function performOCR(base64Image) {
+                try {
+                    const response = await fetch('/api/ocr', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ image: base64Image })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Proxy returned status ${response.status}`);
+                    }
+
+                    const data = await response.json();
+
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+
+                    if (data.IsErroredOnProcessing) {
+                        let errMsg = data.ErrorMessage;
+                        if (Array.isArray(errMsg)) errMsg = errMsg.join(', ');
+                        else if (typeof errMsg === 'object') errMsg = JSON.stringify(errMsg);
+                        throw new Error(errMsg || 'OCR Processing Error');
+                    }
+
+                    if (data.ParsedResults && data.ParsedResults.length > 0) {
+                        return data.ParsedResults[0].ParsedText || 'No text found in the image.';
+                    }
+                    return 'No text found in the image.';
+                } catch (error) {
+                    console.error('OCR Error:', error);
+                    throw new Error('OCR failed: ' + error.message);
+                }
+            }
+
+            function setStatus(message, type) {
+                statusMessage.textContent = message;
+                statusMessage.className = `status ${type}`;
+                
+                if (type === 'success') {
+                    setTimeout(() => {
+                        if (statusMessage.textContent === message) {
+                            statusMessage.textContent = '';
+                        }
+                    }, 3000);
+                }
+            }
+
+            async function processClipboard() {
+                try {
+                    if (!navigator.clipboard || !navigator.clipboard.read) {
+                        throw new Error('Clipboard API not supported in this browser. (Note: requires a secure context or localhost)');
+                    }
+
+                    const clipboardItems = await navigator.clipboard.read();
+                    let imageFound = false;
+
+                    for (const clipboardItem of clipboardItems) {
+                        const imageTypes = clipboardItem.types.filter(type => type.startsWith('image/'));
+
+                        if (imageTypes.length > 0) {
+                            const blob = await clipboardItem.getType(imageTypes[0]);
+                            const imageUrl = URL.createObjectURL(blob);
+
+                            pastedImage.src = imageUrl;
+                            pastedImage.style.display = 'block';
+                            placeholder.style.display = 'none';
+
+                            setStatus('Image pasted successfully! Extracting text...', 'success');
+                            imageFound = true;
+
+                            ocrResultContainer.style.display = 'block';
+                            ocrLoading.style.display = 'flex';
+                            ocrText.style.display = 'none';
+                            ocrText.value = '';
+
+                            try {
+                                const base64String = await blobToBase64(blob);
+                                const extractedText = await performOCR(base64String);
+
+                                ocrLoading.style.display = 'none';
+                                
+                                currentPlainText = cleanMathText(extractedText);
+                                currentLatexText = cleanLatex(extractedText);
+                                
+                                ocrText.value = currentPlainText;
+                                ocrText.style.display = 'block';
+                                copyButtons.style.display = 'flex';
+                                
+                                updateActiveButton('plain');
+
+                                try {
+                                    await navigator.clipboard.writeText(currentPlainText);
+                                    setStatus('Text copied to clipboard. You can now paste it anywhere.', 'success');
+                                } catch (clipboardError) {
+                                    console.error('Clipboard copy failed:', clipboardError);
+                                    setStatus('Text extracted successfully! (Auto-copy failed)', 'success');
+                                }
+                            } catch (ocrError) {
+                                console.error('OCR Error:', ocrError);
+                                ocrLoading.style.display = 'none';
+                                ocrText.style.display = 'block';
+                                ocrText.value = `Error: ${ocrError.message}`;
+                                setStatus('Failed to extract text from the image.', 'error');
+                            }
+
+                            break;
+                        }
+                    }
+
+                    if (!imageFound) {
+                        setStatus('No image found in the clipboard. Try copying an image first.', 'error');
+                    }
+
+                } catch (error) {
+                    console.error('Failed to read clipboard:', error);
+                    if (error.name === 'NotAllowedError') {
+                        setStatus('Permission to read clipboard was denied. Please allow clipboard access.', 'error');
+                    } else {
+                        setStatus(error.message || 'Failed to read from clipboard.', 'error');
+                    }
+                }
+            }
+
+            // Button click
+            pasteBtn.addEventListener('click', processClipboard);
+
+            // Keyboard shortcut: Ctrl + Shift + V
+            // Only fires when the document has focus and the user is not typing in an input/textarea
+            document.addEventListener('keydown', (e) => {
+                const tag = document.activeElement.tagName;
+                const isTyping = (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement.isContentEditable);
+
+                if (e.ctrlKey && e.shiftKey && e.key === 'V' && !isTyping) {
+                    e.preventDefault();
+                    processClipboard();
+                }
+            });
+
+            copyPlainBtn.addEventListener('click', async () => {
+                if (!currentPlainText) return;
+                updateActiveButton('plain');
+                ocrText.value = currentPlainText;
+                try {
+                    await navigator.clipboard.writeText(currentPlainText);
+                    setStatus('Plain text copied to clipboard.', 'success');
+                } catch (e) {
+                    setStatus('Failed to copy text.', 'error');
+                }
+            });
+
+            copyLatexBtn.addEventListener('click', async () => {
+                if (!currentLatexText) return;
+                updateActiveButton('latex');
+                ocrText.value = currentLatexText;
+                try {
+                    await navigator.clipboard.writeText(currentLatexText);
+                    setStatus('LaTeX copied to clipboard.', 'success');
+                } catch (e) {
+                    setStatus('Failed to copy LaTeX.', 'error');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

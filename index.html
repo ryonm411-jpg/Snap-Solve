@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clipboard Image Reader</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <h1>Clipboard Reader</h1>
+        <p>Click the button below to paste an image from your clipboard.</p>
+        
+        <button id="paste-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+            Paste Image
+        </button>
+
+        <div id="status-message" class="status"></div>
+
+        <div class="image-container" id="image-container">
+            <div class="placeholder" id="placeholder">
+                Image will appear here
+            </div>
+            <img id="pasted-image" src="" alt="Pasted from clipboard" style="display: none;">
+        </div>
+
+        <div id="ocr-result-container" class="ocr-container" style="display: none;">
+            <h3>Extracted Text</h3>
+            <div id="ocr-loading" class="ocr-loading" style="display: none;">
+                <div class="spinner"></div> Processing image...
+            </div>
+            <textarea id="ocr-text" class="ocr-text" readonly placeholder="Extracted text will appear here..."></textarea>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
