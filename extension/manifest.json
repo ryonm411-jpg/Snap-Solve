@@ -1,0 +1,45 @@
+{
+  "manifest_version": 3,
+  "name": "SnapSolve",
+  "version": "2.0",
+  "description": "Snap a screenshot, get instant math solutions.",
+  "permissions": [
+    "clipboardRead",
+    "clipboardWrite",
+    "offscreen",
+    "notifications",
+    "storage",
+    "alarms"
+  ],
+  "host_permissions": [
+    "http://localhost:3000/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "icons": {
+    "128": "icon.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon.png",
+    "default_title": "SnapSolve"
+  },
+  "commands": {
+    "take_screenshot": {
+      "suggested_key": {
+        "default": "Alt+Shift+S"
+      },
+      "description": "Take a screenshot for SnapSolve",
+      "global": true
+    },
+    "process_clipboard": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+V"
+      },
+      "description": "Extract math from clipboard image",
+      "global": true
+    }
+  }
+}
