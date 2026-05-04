@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SnapSolve</title>
+    <link rel="stylesheet" href="popup.css">
+    <link rel="stylesheet" href="katex/katex.min.css">
+    <link rel="stylesheet" href="highlight.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- KaTeX and Highlight.js (local bundles) -->
+    <script src="katex/katex.min.js"></script>
+    <script src="katex/auto-render.min.js"></script>
+    <script src="highlight.min.js"></script>
+
+    <!-- ── Screen 1: Home (mode select) ───────────────────── -->
+    <div id="screen-home" class="screen active">
+        <div class="header">
+            <div class="logo">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Crosshair corners -->
+                    <path d="M2 8V4a2 2 0 012-2h4M16 2h4a2 2 0 012 2v4M22 16v4a2 2 0 01-2 2h-4M8 22H4a2 2 0 01-2-2v-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <!-- Sigma symbol -->
+                    <path d="M15 7H9.5L12 12l-2.5 5H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <h1>SnapSolve</h1>
+            <button id="settings-btn" class="btn-icon" title="Settings" style="margin-left:auto;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+            </button>
+        </div>
+
+        <div class="mode-list">
+            <label class="mode-card">
+                <input type="radio" name="mode" value="solve" id="mode-solve" checked>
+                <div class="mode-info">
+                    <span class="mode-title">Step-by-Step</span>
+                    <span class="mode-desc">Solve &amp; explain the problem in detail</span>
+                </div>
+                <div class="mode-radio-indicator"><span class="radio-dot"></span></div>
+            </label>
+
+            <label class="mode-card">
+                <input type="radio" name="mode" value="copy" id="mode-copy">
+                <div class="mode-info">
+                    <span class="mode-title">Copy Question</span>
+                    <span class="mode-desc">Extract &amp; copy the math to clipboard</span>
+                </div>
+                <div class="mode-radio-indicator"><span class="radio-dot"></span></div>
+            </label>
+        </div>
+
+        <button id="screenshot-btn" class="btn-screenshot">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            Take Screenshot
+        </button>
+        <p class="shortcut-hint">Use <kbd>Alt+Shift+S</kbd> to take screenshot faster</p>
+
+        <div id="rate-limit-bar" class="rate-limit-bar" style="display:none;">
+            <span id="rate-limit-text">0/10 free solves today</span>
+            <div class="rate-limit-track"><div id="rate-limit-fill" class="rate-limit-fill"></div></div>
+        </div>
+    </div>
+
+    <!-- ── Screen 2: Result ────────────────────────────────── -->
+    <div id="screen-result" class="screen">
+        <div class="result-header">
+            <button id="back-btn" class="btn-icon" title="Back">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <h1>SnapSolve</h1>
+            <button id="copy-result-btn" class="btn-icon" title="Copy result">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            </button>
+        </div>
+
+        <span id="result-mode-tag" class="mode-tag"></span>
+
+        <div id="result-loading" class="loading-state">
+            <div class="spinner"></div>
+            <span id="result-loading-text">Opening snipping tool...</span>
+        </div>
+
+        <!-- KaTeX-rendered math output -->
+        <div id="result-content" class="result-content" style="display:none;">
+            <div id="result-rendered" class="result-rendered"></div>
+        </div>
+
+        <!-- Chat container (Follow-Up Questions) -->
+        <div id="chat-container" class="chat-container" style="display:none;">
+            <div id="chat-messages" class="chat-messages"></div>
+            <div class="chat-quick-actions">
+                <button class="quick-action-btn">Explain step</button>
+                <button class="quick-action-btn">Why?</button>
+                <button class="quick-action-btn">Hint</button>
+            </div>
+            <div class="chat-input-container">
+                <input id="chat-input" type="text" placeholder="Ask about this problem..." autocomplete="off" />
+                <button id="chat-send-btn" class="chat-send-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <div id="result-status" class="status"></div>
+
+        <button id="screenshot-btn-2" class="btn-screenshot">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            Take Another Screenshot
+        </button>
+        <p class="shortcut-hint">Use <kbd>Alt+Shift+S</kbd> to take screenshot faster</p>
+    </div>
+
+    <!-- ── Screen 3: Settings ──────────────────────────────── -->
+    <div id="screen-settings" class="screen">
+        <div class="result-header">
+            <button id="settings-back-btn" class="btn-icon" title="Back">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <h1>Settings</h1>
+        </div>
+
+        <!-- Default API Toggle -->
+        <div class="settings-group">
+            <div class="settings-row">
+                <span class="settings-label">Use SnapSolve Default API</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="toggle-default" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <p class="settings-hint">Free tier — 10 solves per day</p>
+        </div>
+
+        <!-- BYOK Section -->
+        <div id="byok-section" class="settings-group byok-section" style="display:none;">
+            <p class="settings-section-title">Use Your Own API Key</p>
+
+            <label class="settings-field-label" for="provider-select">Provider</label>
+            <select id="provider-select" class="settings-select">
+                <option value="openai">OpenAI (GPT-4o-mini)</option>
+                <option value="claude">Claude (Sonnet)</option>
+                <option value="gemini">Gemini (Flash)</option>
+            </select>
+
+            <label class="settings-field-label" for="api-key-input">API Key</label>
+            <div class="api-key-wrapper">
+                <input type="password" id="api-key-input" class="settings-input" placeholder="sk-... or your key">
+                <button id="toggle-key-vis" class="btn-icon btn-key-vis" title="Show key">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+            </div>
+
+            <div class="settings-btn-row">
+                <button id="save-key-btn" class="btn-settings-primary">Save</button>
+                <button id="test-key-btn" class="btn-settings-secondary">Test Connection</button>
+            </div>
+        </div>
+
+        <div id="settings-status" class="status"></div>
+    </div>
+
+    <!-- App logic -->
+    <script type="module" src="popup.js"></script>
+</body>
+</html>
