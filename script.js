@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let isWatching = false;
     let watchInterval = null;
     let lastImageSize = 0;
+    let isProcessing = false;
 
     /**
      * Converts a Blob to a Base64 string
@@ -47,9 +48,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 ctx.drawImage(img, 0, 0, width, height);
                 
                 const base64String = canvas.toDataURL('image/jpeg', 0.8);
+                URL.revokeObjectURL(img.src);
                 resolve(base64String);
             };
-            img.onerror = () => reject(new Error('Failed to load image for compression'));
+            img.onerror = () => {
+                URL.revokeObjectURL(img.src);
+                reject(new Error('Failed to load image for compression'));
+            };
             img.src = URL.createObjectURL(blob);
         });
     }
@@ -104,6 +109,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function processClipboard() {
+        if (isProcessing) return;
+        isProcessing = true;
         try {
             if (!navigator.clipboard || !navigator.clipboard.read) {
                 throw new Error('Clipboard API not supported in this browser. (Note: requires a secure context or localhost)');
@@ -170,6 +177,8 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 setStatus(error.message || 'Failed to read from clipboard.', 'error');
             }
+        } finally {
+            isProcessing = false;
         }
     }
 
