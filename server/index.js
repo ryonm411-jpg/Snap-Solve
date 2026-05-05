@@ -27,7 +27,7 @@ app.get('/', (req, res) => {
 // Global Error Handler
 app.use(errorHandler);
 
-// Start server
-app.listen(PORT, () => {
+// Start server — bind to 0.0.0.0 for cloud platform compatibility
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`SnapSolve server running on port ${PORT}`);
 });
