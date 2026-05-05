@@ -10,12 +10,18 @@ const corsOptions = {
             return callback(null, true);
         }
 
-        // Enforce strict matching against the configured extension origin
-        if (origin === allowedExtensionId) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS. Invalid origin.'));
+        // Allow requests with no origin (health checks, server-to-server, curl)
+        if (!origin) {
+            return callback(null, true);
         }
+
+        // Allow if origin matches the configured extension ID
+        if (origin === allowedExtensionId) {
+            return callback(null, true);
+        }
+
+        // Block everything else
+        callback(new Error('Not allowed by CORS. Invalid origin: ' + origin));
     },
     methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
