@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const corsMiddleware = require('./middleware/cors');
 const errorHandler = require('./middleware/errors');
 
@@ -10,7 +11,20 @@ const askRoute = require('./routes/ask');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Render is behind a reverse proxy; trust it to get the real client IP
+app.set('trust proxy', 1);
+
+// Global Rate Limiter: max 60 requests per IP per 24 hours
+const limiter = rateLimit({
+    windowMs: 24 * 60 * 60 * 1000, // 24 hours
+    max: 60, // limit each IP to 60 requests per windowMs
+    message: { error: 'Too many requests from this IP. Please try again tomorrow, or use your own API key.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
 // Middleware
+app.use(limiter);
 app.use(corsMiddleware);
 app.use(express.json({ limit: '10mb' }));
 
