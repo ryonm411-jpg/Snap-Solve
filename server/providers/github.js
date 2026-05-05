@@ -1,4 +1,4 @@
-const fetch = require('node-fetch');
+// Node 18+ has global fetch built-in
 
 module.exports = async function githubProvider({ apiKey, messages, systemPrompt }) {
     const token = apiKey || process.env.GITHUB_TOKEN;

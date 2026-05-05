@@ -1,4 +1,4 @@
-const fetch = require('node-fetch');
+// Node 18+ has global fetch built-in
 
 module.exports = async function openaiProvider({ apiKey, messages, systemPrompt }) {
     if (!apiKey) throw new Error('INVALID_KEY');
