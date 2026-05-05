@@ -1,4 +1,5 @@
 import { cleanLatex } from './utils.js';
+import { API } from './config.js';
 
 let creatingOffscreen;
 let isArmed = false; // One-shot arm mode
@@ -209,7 +210,7 @@ async function runOcrFromClipboard(mode) {
 
 // ── Fetch helpers ─────────────────────────────────────────
 async function fetchOcr(base64Image, provider, apiKey) {
-    const resp = await fetch('http://localhost:3000/api/ocr', {
+    const resp = await fetch(API.OCR, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ image: base64Image, provider, apiKey })
@@ -221,7 +222,7 @@ async function fetchOcr(base64Image, provider, apiKey) {
 }
 
 async function fetchSolve(question, base64Image, provider, apiKey) {
-    const resp = await fetch('http://localhost:3000/api/solve', {
+    const resp = await fetch(API.SOLVE, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question, image: base64Image, provider, apiKey })

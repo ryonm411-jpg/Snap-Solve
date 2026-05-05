@@ -1,4 +1,5 @@
 import { cleanLatex } from './utils.js';
+import { API } from './config.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
 
@@ -307,7 +308,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         try {
             // 1. Ask server to open snipping tool and wait for the image
-            const snipResp = await fetch('http://localhost:3000/api/snip', {
+            const snipResp = await fetch(API.SNIP, {
                 method: 'POST',
                 signal: AbortSignal.timeout(35000)   // 35 second timeout (user has 30s to snip)
             });
@@ -319,7 +320,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const base64Image = snipData.image;  // Already data:image/png;base64,...
 
             // 2. OCR
-            const ocrResp = await fetch('http://localhost:3000/api/ocr', {
+            const ocrResp = await fetch(API.OCR, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ image: base64Image, provider, apiKey })
@@ -339,7 +340,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             if (mode === 'solve') {
                 // 3a. Solve it (now with image context!)
-                const solveResp = await fetch('http://localhost:3000/api/solve', {
+                const solveResp = await fetch(API.SOLVE, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ question: extracted, image: base64Image, provider, apiKey })
@@ -403,7 +404,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         chatMessages.scrollTop = chatMessages.scrollHeight;
 
         try {
-            const askResp = await fetch('http://localhost:3000/api/ask', {
+            const askResp = await fetch(API.ASK, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -436,7 +437,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ── Helper: write to clipboard via server ────────────────
     async function setClipboardViaServer(text) {
         try {
-            await fetch('http://localhost:3000/api/set-clipboard', {
+            await fetch(API.SET_CLIPBOARD, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ text })
@@ -504,7 +505,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         testKeyBtn.disabled = true;
 
         try {
-            const resp = await fetch('http://localhost:3000/api/solve', {
+            const resp = await fetch(API.SOLVE, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ question: 'What is 2+2? Answer with just the number.', provider, apiKey: key }),
