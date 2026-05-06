@@ -639,6 +639,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function loadSession(session) {
+        showScreen('result');
         currentSessionId = session.id;
         currentMode = 'solve';
         currentOcrText = session.ocrText;
