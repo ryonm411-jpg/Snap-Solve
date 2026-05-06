@@ -476,8 +476,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    toggleDefault.addEventListener('change', () => {
-        byokSection.style.display = toggleDefault.checked ? 'none' : 'flex';
+    toggleDefault.addEventListener('change', async () => {
+        const isDefault = toggleDefault.checked;
+        byokSection.style.display = isDefault ? 'none' : 'flex';
+        
+        if (isDefault) {
+            const config = await loadConfig();
+            config.mode = 'default';
+            await saveConfig(config);
+            updateRateLimitUI();
+            showSettingsStatus('✓ Switched to Free Tier', 'success');
+        }
     });
 
     toggleKeyVis.addEventListener('click', () => {
