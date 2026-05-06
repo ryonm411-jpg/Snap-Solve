@@ -56,23 +56,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     let currentMode = 'copy';
     const DAILY_LIMIT = 10;
 
-    // ── Config management ────────────────────────────────────
-    async function loadConfig() {
-        const data = await chrome.storage.local.get(['mode', 'provider', 'apiKey']);
+    // ── User State Management ────────────────────────────────
+    async function loadUserState() {
+        const data = await chrome.storage.local.get(['hasOnboarded', 'mode', 'provider', 'apiKey']);
         return {
+            hasOnboarded: !!data.hasOnboarded,
             mode: data.mode || 'default',
             provider: data.provider || 'openai',
             apiKey: data.apiKey || ''
         };
     }
 
-    async function saveConfig(config) {
-        await chrome.storage.local.set(config);
+    async function saveUserState(state) {
+        await chrome.storage.local.set(state);
     }
 
-    function getProviderAndKey(config) {
-        if (config.mode === 'byok' && config.apiKey) {
-            return { provider: config.provider, apiKey: config.apiKey };
+    function getProviderAndKey(state) {
+        if (state.mode === 'byok' && state.apiKey) {
+            return { provider: state.provider, apiKey: state.apiKey };
         }
         return { provider: 'github', apiKey: undefined };
     }
@@ -96,8 +97,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     async function updateRateLimitUI() {
-        const config = await loadConfig();
-        if (config.mode === 'byok') {
+        const state = await loadUserState();
+        if (state.mode === 'byok') {
             rateLimitBar.style.display = 'none';
             return;
         }
@@ -299,11 +300,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ── Core: call /api/snip, then /api/ocr or /api/solve ────
     async function takeAndProcess() {
         const mode = modeSolve.checked ? 'solve' : 'copy';
-        const config = await loadConfig();
-        const { provider, apiKey } = getProviderAndKey(config);
+        const state = await loadUserState();
+        const { provider, apiKey } = getProviderAndKey(state);
 
         // Rate limit check (default mode, solve only)
-        if (config.mode === 'default' && mode === 'solve') {
+        if (state.mode === 'default' && mode === 'solve') {
             const count = await getRateLimit();
             if (count >= DAILY_LIMIT) {
                 showScreen('result');
@@ -359,7 +360,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 resultFinal = solveData.solution || '';
 
                 // Increment rate limit on successful solve (default mode only)
-                if (config.mode === 'default') {
+                if (state.mode === 'default') {
                     await incrementRateLimit();
                     updateRateLimitUI();
                 }
@@ -388,8 +389,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function askQuestion(questionText) {
         if (!questionText.trim()) return;
 
-        const config = await loadConfig();
-        const { provider, apiKey } = getProviderAndKey(config);
+        const state = await loadUserState();
+        const { provider, apiKey } = getProviderAndKey(state);
 
         // 1. Add user message
         const userMsg = document.createElement('div');
@@ -458,11 +459,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // ── Settings logic ───────────────────────────────────────
     async function loadSettingsUI() {
-        const config = await loadConfig();
-        toggleDefault.checked = (config.mode === 'default');
-        byokSection.style.display = (config.mode === 'default') ? 'none' : 'flex';
-        providerSelect.value = config.provider;
-        apiKeyInput.value = config.apiKey;
+        const state = await loadUserState();
+        toggleDefault.checked = (state.mode === 'default');
+        byokSection.style.display = (state.mode === 'default') ? 'none' : 'flex';
+        providerSelect.value = state.provider;
+        apiKeyInput.value = state.apiKey;
         settingsStatus.textContent = '';
     }
 
@@ -481,9 +482,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         byokSection.style.display = isDefault ? 'none' : 'flex';
         
         if (isDefault) {
-            const config = await loadConfig();
-            config.mode = 'default';
-            await saveConfig(config);
+            const state = await loadUserState();
+            state.mode = 'default';
+            await saveUserState(state);
             updateRateLimitUI();
             showSettingsStatus('✓ Switched to Free Tier', 'success');
         }
@@ -504,7 +505,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        await saveConfig({ mode, provider, apiKey: key });
+        await saveUserState({ hasOnboarded: true, mode, provider, apiKey: key });
         showSettingsStatus('✓ Settings saved', 'success');
         updateRateLimitUI();
     });
@@ -549,8 +550,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // ── Onboarding Logic ──────────────────────────────────
     onboardFreeBtn.addEventListener('click', async () => {
-        await saveConfig({ mode: 'default', provider: 'openai', apiKey: '' });
-        await chrome.storage.local.set({ hasOnboarded: true });
+        await saveUserState({ hasOnboarded: true, mode: 'default', provider: 'openai', apiKey: '' });
         showScreen('home');
         updateRateLimitUI();
     });
@@ -567,8 +567,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }, 2000);
             return;
         }
-        await saveConfig({ mode: 'byok', provider, apiKey: key });
-        await chrome.storage.local.set({ hasOnboarded: true });
+        await saveUserState({ hasOnboarded: true, mode: 'byok', provider, apiKey: key });
         showScreen('home');
         updateRateLimitUI();
     });
@@ -618,23 +617,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // ── Init ──────────────────────────────────────────────────
-    const { hasOnboarded } = await chrome.storage.local.get(['hasOnboarded']);
-    if (!hasOnboarded) {
-        showScreen('onboarding');
-    } else {
-        showScreen('home');
-    }
-    updateRateLimitUI();
+    async function initializeStartupScreen() {
+        const state = await loadUserState();
+        if (!state.hasOnboarded) {
+            showScreen('onboarding');
+        } else {
+            showScreen('home');
+        }
+        updateRateLimitUI();
 
-    // Restore state if popup was closed and re-opened
-    if (hasOnboarded) {
-        const { popupState, lastResult, lastOcrText } = await chrome.storage.session.get(
-            ['popupState', 'lastResult', 'lastOcrText']
-        );
-        if (popupState === 'result' && lastResult) {
-            showResult(lastResult, lastOcrText);
-        } else if (popupState === 'armed') {
-            showLoading('copy');
+        // Restore state if popup was closed and re-opened
+        if (state.hasOnboarded) {
+            const { popupState, lastResult, lastOcrText } = await chrome.storage.session.get(
+                ['popupState', 'lastResult', 'lastOcrText']
+            );
+            if (popupState === 'result' && lastResult) {
+                showResult(lastResult, lastOcrText);
+            } else if (popupState === 'armed') {
+                showLoading('copy');
+            }
         }
     }
+
+    initializeStartupScreen();
 });
