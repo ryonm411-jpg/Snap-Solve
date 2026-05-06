@@ -327,14 +327,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
                 </div>
                 <span class="limit-reached-title">Daily Limit Reached</span>
-                <span class="limit-reached-desc">You've used all 10 free solves for today. Add your own API key for unlimited access.</span>
+                <span class="limit-reached-desc">You've used all 10 free solves for today. Upgrade for unlimited access.</span>
                 <div class="limit-reached-actions">
-                    <button id="limit-add-key-btn" class="btn-primary-action">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 010-7.778zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+                    <button id="limit-upgrade-btn" class="btn-primary-action">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                        Upgrade to Pro
+                    </button>
+                    <button id="limit-add-key-btn" class="btn-secondary-action">
                         Add Your API Key
                     </button>
-                    <button id="limit-back-btn" class="btn-secondary-action">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                    <button id="limit-back-btn" class="btn-secondary-action" style="border: none; background: transparent; font-size: 0.75rem; margin-top: 4px; padding: 4px;">
                         Back to Home
                     </button>
                 </div>
@@ -342,6 +344,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         `;
 
         // Wire up the dynamically created buttons
+        document.getElementById('limit-upgrade-btn').addEventListener('click', () => {
+            window.open('https://buy.stripe.com/', '_blank');
+        });
         document.getElementById('limit-add-key-btn').addEventListener('click', () => {
             navigateToByokSettings();
         });
@@ -648,8 +653,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     settingsBackBtn.addEventListener('click', () => showScreen('home'));
 
     // Upgrade buttons
-    homeUpgradeBtn.addEventListener('click', () => navigateToByokSettings());
-    settingsUpgradeBtn.addEventListener('click', () => navigateToByokSettings());
+    homeUpgradeBtn.addEventListener('click', () => window.open('https://buy.stripe.com/', '_blank'));
+    settingsUpgradeBtn.addEventListener('click', () => window.open('https://buy.stripe.com/', '_blank'));
 
     copyResultBtn.addEventListener('click', async () => {
         if (!currentResult) return;
