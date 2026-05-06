@@ -615,7 +615,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             el.className = 'history-card';
             
             const diffMin = Math.floor((now - session.timestamp) / 60000);
-            let timeStr = diffMin < 1 ? 'Just now' : diffMin < 60 ? \`\${diffMin} min ago\` : diffMin < 1440 ? \`\${Math.floor(diffMin/60)} hrs ago\` : \`\${Math.floor(diffMin/1440)} days ago\`;
+            let timeStr = diffMin < 1 ? 'Just now' : diffMin < 60 ? `${diffMin} min ago` : diffMin < 1440 ? `${Math.floor(diffMin/60)} hrs ago` : `${Math.floor(diffMin/1440)} days ago`;
 
             // Strip markdown/latex for preview
             const plainPreview = (session.solution || session.ocrText || '').replace(/[#$*_]/g, '').trim();
@@ -654,7 +654,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (session.messages && session.messages.length > 0) {
             session.messages.forEach(msg => {
                 const bubble = document.createElement('div');
-                bubble.className = \`chat-message \${msg.role}-message\`;
+                bubble.className = `chat-message ${msg.role}-message`;
                 if (msg.role === 'ai') {
                     renderMath(msg.text, bubble);
                 } else {
