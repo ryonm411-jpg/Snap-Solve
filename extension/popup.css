@@ -1005,6 +1005,199 @@ input:checked + .toggle-slider:before {
     flex-direction: column;
 }
 
+/* ── Upgrade Nudge (Home Screen) ────────────────────────── */
+.upgrade-nudge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #eef2ff, #f0f4ff);
+    border: 1px solid rgba(59, 91, 219, 0.15);
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+.upgrade-nudge svg {
+    color: var(--primary);
+    flex-shrink: 0;
+}
+
+.upgrade-link-btn {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--primary);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    padding: 0;
+    transition: color 0.15s ease;
+}
+
+.upgrade-link-btn:hover {
+    color: var(--primary-hover);
+    text-decoration: underline;
+}
+
+/* ── Upgrade Card (Settings Screen) ─────────────────────── */
+.upgrade-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #eef2ff 0%, #e8ecff 100%);
+    border: 1.5px solid rgba(59, 91, 219, 0.2);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.upgrade-card:hover {
+    border-color: rgba(59, 91, 219, 0.35);
+    box-shadow: 0 2px 10px rgba(59, 91, 219, 0.1);
+}
+
+.upgrade-card-icon {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, #3b5bdb, #5c7cfa);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    flex-shrink: 0;
+}
+
+.upgrade-card-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.upgrade-card-title {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.upgrade-card-desc {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+.upgrade-card-btn {
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 7px 14px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.upgrade-card-btn:hover {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+}
+
+/* ── Rate Limit Reached CTA ─────────────────────────────── */
+.limit-reached-cta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 16px;
+    text-align: center;
+}
+
+.limit-reached-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #fff3bf, #ffd43b);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #e67700;
+}
+
+.limit-reached-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.limit-reached-desc {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    max-width: 240px;
+}
+
+.limit-reached-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+.limit-reached-actions .btn-primary-action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #3b5bdb, #4c6ef5);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 3px 10px rgba(59, 91, 219, 0.3);
+}
+
+.limit-reached-actions .btn-primary-action:hover {
+    background: linear-gradient(135deg, #2f4dc4, #3b5bdb);
+    transform: translateY(-1px);
+}
+
+.limit-reached-actions .btn-secondary-action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 10px;
+    background: white;
+    color: var(--text);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.limit-reached-actions .btn-secondary-action:hover {
+    border-color: #adb5bd;
+    background: var(--surface);
+}
+
 /* ── Screen 0: Onboarding ───────────────────────────────── */
 #screen-onboarding {
     background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);

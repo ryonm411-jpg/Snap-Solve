@@ -109,6 +109,13 @@
             <span id="rate-limit-text">0/10 free solves today</span>
             <div class="rate-limit-track"><div id="rate-limit-fill" class="rate-limit-fill"></div></div>
         </div>
+
+        <!-- Upgrade nudge (default mode only) -->
+        <div id="home-upgrade-nudge" class="upgrade-nudge" style="display:none;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            <span>Want unlimited solves?</span>
+            <button id="home-upgrade-btn" class="upgrade-link-btn">Use your own key →</button>
+        </div>
     </div>
 
     <!-- ── Screen 2: Result ────────────────────────────────── -->
@@ -205,6 +212,18 @@
                 <button id="save-key-btn" class="btn-settings-primary">Save</button>
                 <button id="test-key-btn" class="btn-settings-secondary">Test Connection</button>
             </div>
+        </div>
+
+        <!-- Upgrade Card -->
+        <div id="settings-upgrade-card" class="upgrade-card">
+            <div class="upgrade-card-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            </div>
+            <div class="upgrade-card-body">
+                <span class="upgrade-card-title">Unlock Unlimited Access</span>
+                <span class="upgrade-card-desc">Add your own API key for unlimited solves with no daily cap.</span>
+            </div>
+            <button id="settings-upgrade-btn" class="upgrade-card-btn">Set Up Key</button>
         </div>
 
         <div id="settings-status" class="status"></div>

@@ -51,6 +51,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const onboardProvider   = document.getElementById('onboard-provider');
     const onboardApiKey     = document.getElementById('onboard-api-key');
 
+    // Upgrade elements
+    const homeUpgradeNudge  = document.getElementById('home-upgrade-nudge');
+    const homeUpgradeBtn    = document.getElementById('home-upgrade-btn');
+    const settingsUpgradeCard = document.getElementById('settings-upgrade-card');
+    const settingsUpgradeBtn  = document.getElementById('settings-upgrade-btn');
+
     let currentResult = '';
     let currentOcrText = '';
     let currentMode = 'copy';
@@ -98,17 +104,28 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function updateRateLimitUI() {
         const state = await loadUserState();
-        if (state.mode === 'byok') {
+        const isByok = state.mode === 'byok';
+
+        // Rate limit bar (home)
+        if (isByok) {
             rateLimitBar.style.display = 'none';
-            return;
+        } else {
+            const count = await getRateLimit();
+            rateLimitBar.style.display = 'flex';
+            rateLimitText.textContent = `${count}/${DAILY_LIMIT} free solves today`;
+            const pct = Math.min((count / DAILY_LIMIT) * 100, 100);
+            rateLimitFill.style.width = pct + '%';
+            rateLimitFill.className = 'rate-limit-fill' +
+                (count >= DAILY_LIMIT ? ' full' : count >= 7 ? ' warn' : '');
         }
-        const count = await getRateLimit();
-        rateLimitBar.style.display = 'flex';
-        rateLimitText.textContent = `${count}/${DAILY_LIMIT} free solves today`;
-        const pct = Math.min((count / DAILY_LIMIT) * 100, 100);
-        rateLimitFill.style.width = pct + '%';
-        rateLimitFill.className = 'rate-limit-fill' +
-            (count >= DAILY_LIMIT ? ' full' : count >= 7 ? ' warn' : '');
+
+        // Home upgrade nudge (only for default mode)
+        homeUpgradeNudge.style.display = isByok ? 'none' : 'flex';
+
+        // Settings upgrade card (only for default mode)
+        if (settingsUpgradeCard) {
+            settingsUpgradeCard.style.display = isByok ? 'none' : 'flex';
+        }
     }
 
     // ── Screen helpers ───────────────────────────────────────
@@ -297,6 +314,51 @@ document.addEventListener('DOMContentLoaded', async () => {
         resultStatus.className = 'status error';
     }
 
+    function showLimitReachedCTA() {
+        resultLoading.style.display = 'none';
+        resultContent.style.display = 'flex';
+        chatContainer.style.display = 'none';
+        resultModeTag.textContent = '';
+        resultStatus.textContent = '';
+
+        resultRendered.innerHTML = `
+            <div class="limit-reached-cta">
+                <div class="limit-reached-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                </div>
+                <span class="limit-reached-title">Daily Limit Reached</span>
+                <span class="limit-reached-desc">You've used all 10 free solves for today. Add your own API key for unlimited access.</span>
+                <div class="limit-reached-actions">
+                    <button id="limit-add-key-btn" class="btn-primary-action">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 010-7.778zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+                        Add Your API Key
+                    </button>
+                    <button id="limit-back-btn" class="btn-secondary-action">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                        Back to Home
+                    </button>
+                </div>
+            </div>
+        `;
+
+        // Wire up the dynamically created buttons
+        document.getElementById('limit-add-key-btn').addEventListener('click', () => {
+            navigateToByokSettings();
+        });
+        document.getElementById('limit-back-btn').addEventListener('click', () => {
+            showScreen('home');
+        });
+    }
+
+    function navigateToByokSettings() {
+        loadSettingsUI();
+        showScreen('settings');
+        // Auto-toggle to BYOK mode so the section is visible
+        toggleDefault.checked = false;
+        byokSection.style.display = 'flex';
+        apiKeyInput.focus();
+    }
+
     // ── Core: call /api/snip, then /api/ocr or /api/solve ────
     async function takeAndProcess() {
         const mode = modeSolve.checked ? 'solve' : 'copy';
@@ -308,7 +370,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const count = await getRateLimit();
             if (count >= DAILY_LIMIT) {
                 showScreen('result');
-                showError('Free limit reached (10/day). Add your own API key in Settings for unlimited use.');
+                showLimitReachedCTA();
                 return;
             }
         }
@@ -578,6 +640,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     backBtn.addEventListener('click', () => showScreen('home'));
     settingsBtn.addEventListener('click', () => { loadSettingsUI(); showScreen('settings'); });
     settingsBackBtn.addEventListener('click', () => showScreen('home'));
+
+    // Upgrade buttons
+    homeUpgradeBtn.addEventListener('click', () => navigateToByokSettings());
+    settingsUpgradeBtn.addEventListener('click', () => navigateToByokSettings());
 
     copyResultBtn.addEventListener('click', async () => {
         if (!currentResult) return;
