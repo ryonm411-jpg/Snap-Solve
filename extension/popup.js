@@ -785,11 +785,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ── Buttons ───────────────────────────────────────────────
     screenshotBtn.addEventListener('click', takeAndProcess);
     screenshotBtn2.addEventListener('click', takeAndProcess);
-    backBtn.addEventListener('click', () => showScreen('home'));
+    backBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); showScreen('home'); });
     settingsBtn.addEventListener('click', () => { loadSettingsUI(); showScreen('settings'); });
-    settingsBackBtn.addEventListener('click', () => showScreen('home'));
+    settingsBackBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); showScreen('home'); });
     historyBtn.addEventListener('click', loadHistoryUI);
-    historyBackBtn.addEventListener('click', () => showScreen('home'));
+    historyBackBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); showScreen('home'); });
 
     // Upgrade buttons
     homeUpgradeBtn.addEventListener('click', () => window.open('https://buy.stripe.com/', '_blank'));

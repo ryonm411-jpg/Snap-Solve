@@ -243,6 +243,10 @@ body {
     font-size: 0.85rem;
 }
 
+.btn-icon svg {
+    pointer-events: none;
+}
+
 .btn-icon:hover {
     background: var(--surface);
     border-color: #adb5bd;
