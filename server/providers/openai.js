@@ -4,7 +4,7 @@ module.exports = async function openaiProvider({ apiKey, messages, systemPrompt 
     if (!apiKey) throw new Error('INVALID_KEY');
 
     const payload = {
-        model: 'gpt-4o',
+        model: 'gpt-4o-mini',
         messages: [
             { role: 'system', content: systemPrompt },
             ...messages

@@ -16,8 +16,54 @@
     <script src="katex/auto-render.min.js"></script>
     <script src="highlight.min.js"></script>
 
+    <!-- ── Screen 0: Onboarding (first-time users) ──────── -->
+    <div id="screen-onboarding" class="screen">
+        <div class="onboard-hero">
+            <div class="onboard-logo">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M2 8V4a2 2 0 012-2h4M16 2h4a2 2 0 012 2v4M22 16v4a2 2 0 01-2 2h-4M8 22H4a2 2 0 01-2-2v-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M15 7H9.5L12 12l-2.5 5H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <h2 class="onboard-title">Welcome to SnapSolve!</h2>
+            <p class="onboard-subtitle">Screenshot any math problem and get instant step-by-step solutions.</p>
+        </div>
+
+        <button id="onboard-free-btn" class="onboard-btn onboard-btn-primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Start Free (10 solves/day)
+        </button>
+
+        <div class="onboard-divider">
+            <span>or bring your own API key</span>
+        </div>
+
+        <div class="onboard-byok-section">
+            <label class="onboard-field-label" for="onboard-provider">Provider</label>
+            <select id="onboard-provider" class="settings-select onboard-select">
+                <option value="openai">OpenAI (GPT-4o-mini)</option>
+                <option value="claude">Claude (Sonnet)</option>
+                <option value="gemini">Gemini (Flash)</option>
+                <option value="deepseek">DeepSeek (V3 Chat)</option>
+            </select>
+
+            <label class="onboard-field-label" for="onboard-api-key">API Key</label>
+            <input type="password" id="onboard-api-key" class="settings-input onboard-input" placeholder="sk-... or your key">
+
+            <button id="onboard-save-key-btn" class="onboard-btn onboard-btn-key">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 010-7.778zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+                Save API Key
+            </button>
+        </div>
+
+        <div class="onboard-footer">
+            <p class="onboard-footer-text">Need help? Visit <a href="https://github.com/ryonm411-jpg/Snap-Solve" target="_blank">our GitHub</a></p>
+            <p class="onboard-footer-hint">You can change this later in Settings.</p>
+        </div>
+    </div>
+
     <!-- ── Screen 1: Home (mode select) ───────────────────── -->
-    <div id="screen-home" class="screen active">
+    <div id="screen-home" class="screen">
         <div class="header">
             <div class="logo">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -141,7 +187,7 @@
 
             <label class="settings-field-label" for="provider-select">Provider</label>
             <select id="provider-select" class="settings-select">
-                <option value="openai">OpenAI (GPT-4o)</option>
+                <option value="openai">OpenAI (GPT-4o-mini)</option>
                 <option value="claude">Claude (Sonnet)</option>
                 <option value="gemini">Gemini (Flash)</option>
                 <option value="deepseek">DeepSeek (V3 Chat)</option>

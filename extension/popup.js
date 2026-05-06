@@ -4,6 +4,7 @@ import { API } from './config.js';
 document.addEventListener('DOMContentLoaded', async () => {
 
     // ── Elements ─────────────────────────────────────────────
+    const screenOnboarding = document.getElementById('screen-onboarding');
     const screenHome    = document.getElementById('screen-home');
     const screenResult  = document.getElementById('screen-result');
     const screenSettings = document.getElementById('screen-settings');
@@ -43,6 +44,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const chatInput       = document.getElementById('chat-input');
     const chatSendBtn     = document.getElementById('chat-send-btn');
     const quickActionBtns = document.querySelectorAll('.quick-action-btn');
+
+    // Onboarding elements
+    const onboardFreeBtn    = document.getElementById('onboard-free-btn');
+    const onboardSaveKeyBtn = document.getElementById('onboard-save-key-btn');
+    const onboardProvider   = document.getElementById('onboard-provider');
+    const onboardApiKey     = document.getElementById('onboard-api-key');
 
     let currentResult = '';
     let currentOcrText = '';
@@ -105,6 +112,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // ── Screen helpers ───────────────────────────────────────
     function showScreen(name) {
+        screenOnboarding.classList.toggle('active', name === 'onboarding');
         screenHome.classList.toggle('active', name === 'home');
         screenResult.classList.toggle('active', name === 'result');
         screenSettings.classList.toggle('active', name === 'settings');
@@ -530,6 +538,32 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
+    // ── Onboarding Logic ──────────────────────────────────
+    onboardFreeBtn.addEventListener('click', async () => {
+        await saveConfig({ mode: 'default', provider: 'openai', apiKey: '' });
+        await chrome.storage.local.set({ hasOnboarded: true });
+        showScreen('home');
+        updateRateLimitUI();
+    });
+
+    onboardSaveKeyBtn.addEventListener('click', async () => {
+        const provider = onboardProvider.value;
+        const key = onboardApiKey.value.trim();
+        if (!key) {
+            onboardApiKey.style.borderColor = '#ef4444';
+            onboardApiKey.setAttribute('placeholder', 'Please enter your key');
+            setTimeout(() => {
+                onboardApiKey.style.borderColor = '#334155';
+                onboardApiKey.setAttribute('placeholder', 'sk-... or your key');
+            }, 2000);
+            return;
+        }
+        await saveConfig({ mode: 'byok', provider, apiKey: key });
+        await chrome.storage.local.set({ hasOnboarded: true });
+        showScreen('home');
+        updateRateLimitUI();
+    });
+
     // ── Buttons ───────────────────────────────────────────────
     screenshotBtn.addEventListener('click', takeAndProcess);
     screenshotBtn2.addEventListener('click', takeAndProcess);
@@ -575,16 +609,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // ── Init ──────────────────────────────────────────────────
-    showScreen('home');
+    const { hasOnboarded } = await chrome.storage.local.get(['hasOnboarded']);
+    if (!hasOnboarded) {
+        showScreen('onboarding');
+    } else {
+        showScreen('home');
+    }
     updateRateLimitUI();
 
     // Restore state if popup was closed and re-opened
-    const { popupState, lastResult, lastOcrText } = await chrome.storage.session.get(
-        ['popupState', 'lastResult', 'lastOcrText']
-    );
-    if (popupState === 'result' && lastResult) {
-        showResult(lastResult, lastOcrText);
-    } else if (popupState === 'armed') {
-        showLoading('copy');
+    if (hasOnboarded) {
+        const { popupState, lastResult, lastOcrText } = await chrome.storage.session.get(
+            ['popupState', 'lastResult', 'lastOcrText']
+        );
+        if (popupState === 'result' && lastResult) {
+            showResult(lastResult, lastOcrText);
+        } else if (popupState === 'armed') {
+            showLoading('copy');
+        }
     }
 });
