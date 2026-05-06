@@ -350,12 +350,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    function navigateToByokSettings() {
-        loadSettingsUI();
+    async function navigateToByokSettings() {
+        await loadSettingsUI();
         showScreen('settings');
         // Auto-toggle to BYOK mode so the section is visible
         toggleDefault.checked = false;
         byokSection.style.display = 'flex';
+        
+        // Hide the upgrade card so it doesn't clutter the BYOK setup
+        if (document.getElementById('settings-upgrade-card')) {
+            document.getElementById('settings-upgrade-card').style.display = 'none';
+        }
+        
         apiKeyInput.focus();
     }
 
