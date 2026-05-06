@@ -8,10 +8,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const screenHome    = document.getElementById('screen-home');
     const screenResult  = document.getElementById('screen-result');
     const screenSettings = document.getElementById('screen-settings');
+    const screenHistory = document.getElementById('screen-history');
 
     const modeSolve     = document.getElementById('mode-solve');
     const screenshotBtn = document.getElementById('screenshot-btn');
     const settingsBtn   = document.getElementById('settings-btn');
+    const historyBtn    = document.getElementById('history-btn');
+    const historyBackBtn= document.getElementById('history-back-btn');
+    const historyList   = document.getElementById('history-list');
 
     const backBtn        = document.getElementById('back-btn');
     const copyResultBtn  = document.getElementById('copy-result-btn');
@@ -60,7 +64,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     let currentResult = '';
     let currentOcrText = '';
     let currentMode = 'copy';
+    let currentSessionId = null;
     const DAILY_LIMIT = 10;
+    const MAX_SESSIONS = 20;
+
+    function generateId() {
+        return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    }
 
     // ── User State Management ────────────────────────────────
     async function loadUserState() {
@@ -82,6 +92,35 @@ document.addEventListener('DOMContentLoaded', async () => {
             return { provider: state.provider, apiKey: state.apiKey };
         }
         return { provider: 'github', apiKey: undefined };
+    }
+
+    // ── Sessions Storage Helpers ──────────────────────────────
+    async function getSessions() {
+        const data = await chrome.storage.local.get(['sessions']);
+        return data.sessions || [];
+    }
+
+    async function saveSessions(sessions) {
+        // Enforce limit
+        if (sessions.length > MAX_SESSIONS) {
+            sessions = sessions.slice(0, MAX_SESSIONS);
+        }
+        await chrome.storage.local.set({ sessions });
+    }
+
+    async function addSession(session) {
+        const sessions = await getSessions();
+        sessions.unshift(session);
+        await saveSessions(sessions);
+    }
+
+    async function updateSession(sessionId, updaterFn) {
+        const sessions = await getSessions();
+        const index = sessions.findIndex(s => s.id === sessionId);
+        if (index !== -1) {
+            updaterFn(sessions[index]);
+            await saveSessions(sessions);
+        }
     }
 
     // ── Rate limiting (default mode only) ────────────────────
@@ -134,11 +173,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         screenHome.classList.toggle('active', name === 'home');
         screenResult.classList.toggle('active', name === 'result');
         screenSettings.classList.toggle('active', name === 'settings');
+        screenHistory.classList.toggle('active', name === 'history');
     }
 
     function showLoading(mode) {
         resultModeTag.textContent = mode === 'solve' ? 'Step-by-Step' : 'Copy Question';
         currentMode = mode;
+        currentSessionId = null; // Clear session on new snip
         resultLoading.style.display = 'flex';
         resultContent.style.display = 'none';
         chatContainer.style.display = 'none';
@@ -432,6 +473,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (solveData.error) throw new Error(solveData.error);
                 resultFinal = solveData.solution || '';
 
+                // Create new session
+                currentSessionId = generateId();
+                await addSession({
+                    id: currentSessionId,
+                    timestamp: Date.now(),
+                    image: base64Image,
+                    ocrText: extracted,
+                    solution: resultFinal,
+                    messages: []
+                });
+
                 // Increment rate limit on successful solve (default mode only)
                 if (state.mode === 'default') {
                     await incrementRateLimit();
@@ -476,7 +528,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         chatSendBtn.disabled = true;
         chatInput.disabled = true;
 
-        // 3. Add "Thinking..." AI message
+        // 3. Save user message to session
+        if (currentSessionId) {
+            await updateSession(currentSessionId, s => s.messages.push({ role: 'user', text: questionText }));
+        }
+
+        // 4. Add "Thinking..." AI message
         const aiMsg = document.createElement('div');
         aiMsg.className = 'chat-message ai-message';
         aiMsg.textContent = 'Thinking...';
@@ -502,8 +559,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             const askData = await askResp.json();
             if (askData.error) throw new Error(askData.error);
 
-            // 4. Update AI message & render math
+            // 5. Update AI message & render math
             renderMath(askData.answer, aiMsg);
+
+            // 6. Save AI message to session
+            if (currentSessionId) {
+                await updateSession(currentSessionId, s => s.messages.push({ role: 'ai', text: askData.answer }));
+            }
 
         } catch (e) {
             aiMsg.textContent = 'Error: ' + e.message;
@@ -528,6 +590,81 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Fallback to browser API if server is unreachable
             try { await navigator.clipboard.writeText(text); } catch {}
         }
+    }
+
+    // ── History Logic ────────────────────────────────────────
+    async function loadHistoryUI() {
+        showScreen('history');
+        const sessions = await getSessions();
+        historyList.innerHTML = '';
+
+        if (sessions.length === 0) {
+            historyList.innerHTML = `
+                <div class="history-empty">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-muted); opacity: 0.5;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <span>No saved problems yet.</span>
+                    <span style="font-size: 0.7rem;">Take a screenshot to get started!</span>
+                </div>
+            `;
+            return;
+        }
+
+        const now = Date.now();
+        sessions.forEach(session => {
+            const el = document.createElement('div');
+            el.className = 'history-card';
+            
+            const diffMin = Math.floor((now - session.timestamp) / 60000);
+            let timeStr = diffMin < 1 ? 'Just now' : diffMin < 60 ? \`\${diffMin} min ago\` : diffMin < 1440 ? \`\${Math.floor(diffMin/60)} hrs ago\` : \`\${Math.floor(diffMin/1440)} days ago\`;
+
+            // Strip markdown/latex for preview
+            const plainPreview = (session.solution || session.ocrText || '').replace(/[#$*_]/g, '').trim();
+
+            el.innerHTML = `
+                <div class="history-card-icon">∑</div>
+                <div class="history-card-body">
+                    <span class="history-card-preview">${plainPreview}</span>
+                    <div class="history-card-meta">
+                        <span>Step-by-Step</span>
+                        <span class="dot"></span>
+                        <span>${timeStr}</span>
+                    </div>
+                </div>
+                <svg class="history-card-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            `;
+            
+            el.addEventListener('click', () => loadSession(session));
+            historyList.appendChild(el);
+        });
+    }
+
+    function loadSession(session) {
+        currentSessionId = session.id;
+        currentMode = 'solve';
+        currentOcrText = session.ocrText;
+        
+        resultModeTag.textContent = 'Saved Problem';
+        resultStatus.textContent = '';
+        
+        // Show result
+        showResult(session.solution, session.ocrText);
+        
+        // Render chat messages
+        chatMessages.innerHTML = '';
+        if (session.messages && session.messages.length > 0) {
+            session.messages.forEach(msg => {
+                const bubble = document.createElement('div');
+                bubble.className = \`chat-message \${msg.role}-message\`;
+                if (msg.role === 'ai') {
+                    renderMath(msg.text, bubble);
+                } else {
+                    bubble.textContent = msg.text;
+                }
+                chatMessages.appendChild(bubble);
+            });
+        }
+        
+        chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
     // ── Settings logic ───────────────────────────────────────
@@ -651,6 +788,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     backBtn.addEventListener('click', () => showScreen('home'));
     settingsBtn.addEventListener('click', () => { loadSettingsUI(); showScreen('settings'); });
     settingsBackBtn.addEventListener('click', () => showScreen('home'));
+    historyBtn.addEventListener('click', loadHistoryUI);
+    historyBackBtn.addEventListener('click', () => showScreen('home'));
 
     // Upgrade buttons
     homeUpgradeBtn.addEventListener('click', () => window.open('https://buy.stripe.com/', '_blank'));
