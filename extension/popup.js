@@ -503,7 +503,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 showScreen('home');  // User cancelled snip, go back quietly
             } else {
                 const msg = e.message === 'Failed to fetch'
-                    ? 'Cannot connect to server. Is start_server.ps1 running?'
+                    ? 'Cannot connect to server. Is SnapSolveTray.ps1 running?'
                     : e.message;
                 showError(msg);
             }
