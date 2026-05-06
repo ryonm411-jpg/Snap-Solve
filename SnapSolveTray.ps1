@@ -1,5 +1,5 @@
 # SnapSolve System Tray Shim
-# Runs the Windows-only HTTP shim (port 3001) silently in the system tray.
+# Runs the Windows-only HTTP shim (port 3002) silently in the system tray.
 # Handles /api/snip and /api/set-clipboard — identical logic to snip_shim.ps1.
 
 Add-Type -AssemblyName System.Windows.Forms
@@ -45,7 +45,7 @@ if (Test-Path $iconPath) {
 # ── Create NotifyIcon and context menu ───────────────────────────────
 $notify = New-Object System.Windows.Forms.NotifyIcon
 $notify.Icon = $trayIcon
-$notify.Text = "SnapSolve — Running on port 3001"
+$notify.Text = "SnapSolve — Running on port 3002"
 $notify.Visible = $true
 
 $menu = New-Object System.Windows.Forms.ContextMenuStrip
@@ -79,7 +79,7 @@ $notify.ContextMenuStrip = $menu
 
 # ── Show startup balloon ─────────────────────────────────────────────
 $notify.BalloonTipTitle = "SnapSolve"
-$notify.BalloonTipText = "Screenshot capture is active on port 3001."
+$notify.BalloonTipText = "Screenshot capture is active on port 3002."
 $notify.BalloonTipIcon = [System.Windows.Forms.ToolTipIcon]::Info
 $notify.ShowBalloonTip(3000)
 
@@ -235,7 +235,7 @@ $runspace.Open()
 
 $pipeline = [PowerShell]::Create()
 $pipeline.Runspace = $runspace
-$pipeline.AddScript($listenerScript).AddArgument(3001).AddArgument($logFile) | Out-Null
+$pipeline.AddScript($listenerScript).AddArgument(3002).AddArgument($logFile) | Out-Null
 $asyncResult = $pipeline.BeginInvoke()
 
 Write-Log "Background listener runspace started."
