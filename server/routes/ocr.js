@@ -22,9 +22,14 @@ router.post('/', async (req, res, next) => {
             }
         ];
 
+        // DeepSeek API doesn't support images yet. If they chose DeepSeek,
+        // we use the Default (GitHub) API for OCR silently, then DeepSeek for the math!
+        const actualProvider = provider === 'deepseek' ? 'github' : provider;
+        const actualKey = provider === 'deepseek' ? undefined : apiKey;
+
         const extractedText = await invokeProvider({
-            provider,
-            apiKey,
+            provider: actualProvider,
+            apiKey: actualKey,
             messages,
             systemPrompt: OCR_PROMPT
         });

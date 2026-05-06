@@ -33,7 +33,9 @@ router.post('/', async (req, res, next) => {
             });
         }
 
-        if (image) {
+        // DeepSeek doesn't support images. If provider is deepseek, we only
+        // pass the text question (which was extracted by the GitHub OCR fallback).
+        if (image && provider !== 'deepseek') {
             content.push({
                 type: 'image_url',
                 image_url: { url: image }
