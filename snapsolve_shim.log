@@ -1,0 +1,15 @@
+﻿2026-05-05 18:23:42  SnapSolve tray shim starting...
+2026-05-05 18:23:42  Background listener runspace started.
+2026-05-05 18:23:43  HttpListener started on port 3002
+2026-05-05 18:24:32  snip ERROR: No screenshot captured (timed out or cancelled).
+2026-05-05 18:25:47  snip ERROR: No screenshot captured (timed out or cancelled).
+2026-05-05 18:25:53  Listener error: Exception setting "ContentLength64": "This operation cannot be performed after the response has been submitted."
+2026-05-05 18:25:53  HttpListener stopped.
+2026-05-05 18:27:25  SnapSolve tray shim starting...
+2026-05-05 18:27:25  HttpListener started on port 3002
+2026-05-05 18:28:48  snip OK
+2026-05-05 18:29:26  set-clipboard OK
+2026-05-05 18:29:46  snip OK
+2026-05-05 18:30:00  set-clipboard OK
+2026-05-05 18:30:48  snip OK
+2026-05-05 18:31:02  set-clipboard OK
