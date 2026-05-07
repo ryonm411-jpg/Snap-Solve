@@ -93,18 +93,20 @@
             </label>
 
             <label class="mode-card">
-                <input type="radio" name="mode" value="copy" id="mode-copy">
+                <input type="radio" name="mode" value="chat" id="mode-chat">
                 <div class="mode-info">
-                    <span class="mode-title">Copy Question</span>
-                    <span class="mode-desc">Extract &amp; copy the math to clipboard</span>
+                    <span class="mode-title">AI Chat</span>
+                    <span class="mode-desc">Ask anything, with or without screenshots</span>
                 </div>
                 <div class="mode-radio-indicator"><span class="radio-dot"></span></div>
             </label>
         </div>
 
         <button id="screenshot-btn" class="btn-screenshot">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-            Take Screenshot
+            <span id="screenshot-btn-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            </span>
+            <span id="screenshot-btn-text">Take Screenshot</span>
         </button>
         <p class="shortcut-hint">Use <kbd>Alt+Shift+S</kbd> to take screenshot faster</p>
 
@@ -168,6 +170,52 @@
             Take Another Screenshot
         </button>
         <p class="shortcut-hint">Use <kbd>Alt+Shift+S</kbd> to take screenshot faster</p>
+    </div>
+
+    <!-- ── Screen 5: AI Chat ───────────────────────────────── -->
+    <div id="screen-chat" class="screen">
+        <div class="result-header">
+            <button id="chat-back-btn" class="btn-icon" title="Back">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <h1>AI Chat</h1>
+            <button id="chat-new-btn" class="btn-icon" title="New Chat" style="margin-left: auto;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
+        </div>
+
+        <div id="standalone-chat-messages" class="chat-messages" style="flex: 1; max-height: none; overflow-y: auto;">
+            <!-- Chat bubbles go here -->
+            <div class="history-empty" style="margin-top: auto; margin-bottom: auto; padding: 20px;">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-muted); opacity: 0.5;"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                <span>Ask anything!</span>
+                <span style="font-size: 0.7rem; text-align: center;">I can help with math, coding, science, and more.</span>
+            </div>
+        </div>
+
+        <div class="chat-bottom-area" style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+            <div class="chat-quick-actions" style="padding-bottom: 2px;">
+                <button class="quick-action-btn standalone-action">Explain this</button>
+                <button class="quick-action-btn standalone-action">Summarize</button>
+                <button class="quick-action-btn standalone-action">Debug code</button>
+                <button class="quick-action-btn standalone-action">Give hints</button>
+            </div>
+
+            <label class="screenshot-context-toggle" style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.75rem; color: var(--text-muted); user-select: none;">
+                <div class="toggle-switch" style="transform: scale(0.7); transform-origin: left center;">
+                    <input type="checkbox" id="chat-use-screenshot">
+                    <span class="toggle-slider"></span>
+                </div>
+                <span>Use Current Screenshot</span>
+            </label>
+
+            <div class="chat-input-container">
+                <textarea id="standalone-chat-input" placeholder="Ask anything..." rows="1" style="resize: none; width: 100%; border: none; outline: none; font-family: 'Inter', sans-serif; font-size: 0.85rem; color: var(--text); padding: 4px 0; max-height: 120px;"></textarea>
+                <button id="standalone-chat-send-btn" class="chat-send-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- ── Screen 4: History ───────────────────────────────── -->

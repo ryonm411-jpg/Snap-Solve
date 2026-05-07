@@ -9,9 +9,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     const screenResult  = document.getElementById('screen-result');
     const screenSettings = document.getElementById('screen-settings');
     const screenHistory = document.getElementById('screen-history');
+    const screenChat    = document.getElementById('screen-chat');
 
     const modeSolve     = document.getElementById('mode-solve');
+    const modeChat      = document.getElementById('mode-chat');
     const screenshotBtn = document.getElementById('screenshot-btn');
+    const screenshotBtnIcon = document.getElementById('screenshot-btn-icon');
+    const screenshotBtnText = document.getElementById('screenshot-btn-text');
     const settingsBtn   = document.getElementById('settings-btn');
     const historyBtn    = document.getElementById('history-btn');
     const historyBackBtn= document.getElementById('history-back-btn');
@@ -25,6 +29,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     const screenshotBtn2 = document.getElementById('screenshot-btn-2');
     const resultModeTag  = document.getElementById('result-mode-tag');
     const resultStatus   = document.getElementById('result-status');
+
+    // Chat elements
+    const chatBackBtn        = document.getElementById('chat-back-btn');
+    const chatNewBtn         = document.getElementById('chat-new-btn');
+    const standaloneChatMessages = document.getElementById('standalone-chat-messages');
+    const standaloneChatInput    = document.getElementById('standalone-chat-input');
+    const standaloneChatSendBtn  = document.getElementById('standalone-chat-send-btn');
+    const chatUseScreenshot      = document.getElementById('chat-use-screenshot');
+    const standaloneActionBtns   = document.querySelectorAll('.standalone-action');
 
     // Settings elements
     const settingsBackBtn  = document.getElementById('settings-back-btn');
@@ -63,8 +76,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     let currentResult = '';
     let currentOcrText = '';
-    let currentMode = 'copy';
+    let currentMode = 'solve';
     let currentSessionId = null;
+    let chatMemory = [];
     const DAILY_LIMIT = 10;
     const MAX_SESSIONS = 20;
 
@@ -174,10 +188,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         screenResult.classList.toggle('active', name === 'result');
         screenSettings.classList.toggle('active', name === 'settings');
         screenHistory.classList.toggle('active', name === 'history');
+        screenChat.classList.toggle('active', name === 'chat');
     }
 
     function showLoading(mode) {
-        resultModeTag.textContent = mode === 'solve' ? 'Step-by-Step' : 'Copy Question';
+        resultModeTag.textContent = 'Step-by-Step';
         currentMode = mode;
         currentSessionId = null; // Clear session on new snip
         resultLoading.style.display = 'flex';
@@ -413,12 +428,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // ── Core: call /api/snip, then /api/ocr or /api/solve ────
     async function takeAndProcess() {
-        const mode = modeSolve.checked ? 'solve' : 'copy';
+        const mode = 'solve';
         const state = await loadUserState();
         const { provider, apiKey } = getProviderAndKey(state);
 
-        // Rate limit check (default mode, solve only)
-        if (state.mode === 'default' && mode === 'solve') {
+        // Rate limit check (default mode)
+        if (state.mode === 'default') {
             const count = await getRateLimit();
             if (count >= DAILY_LIMIT) {
                 showScreen('result');
@@ -459,42 +474,35 @@ document.addEventListener('DOMContentLoaded', async () => {
             const extracted = ocrData.ParsedResults?.[0]?.ParsedText || '';
             if (!extracted.trim()) throw new Error('No text found in the screenshot.');
 
-            let resultFinal = '';
+            // 3. Solve it (with image context)
+            const solveResp = await fetch(API.SOLVE, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question: extracted, image: base64Image, provider, apiKey })
+            });
+            if (!solveResp.ok) throw new Error(`Solve server error ${solveResp.status}`);
+            const solveData = await solveResp.json();
+            if (solveData.error) throw new Error(solveData.error);
+            const resultFinal = solveData.solution || '';
 
-            if (mode === 'solve') {
-                // 3a. Solve it (now with image context!)
-                const solveResp = await fetch(API.SOLVE, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ question: extracted, image: base64Image, provider, apiKey })
-                });
-                if (!solveResp.ok) throw new Error(`Solve server error ${solveResp.status}`);
-                const solveData = await solveResp.json();
-                if (solveData.error) throw new Error(solveData.error);
-                resultFinal = solveData.solution || '';
+            // Create new session
+            currentSessionId = generateId();
+            await addSession({
+                id: currentSessionId,
+                timestamp: Date.now(),
+                image: base64Image,
+                ocrText: extracted,
+                solution: resultFinal,
+                messages: []
+            });
 
-                // Create new session
-                currentSessionId = generateId();
-                await addSession({
-                    id: currentSessionId,
-                    timestamp: Date.now(),
-                    image: base64Image,
-                    ocrText: extracted,
-                    solution: resultFinal,
-                    messages: []
-                });
-
-                // Increment rate limit on successful solve (default mode only)
-                if (state.mode === 'default') {
-                    await incrementRateLimit();
-                    updateRateLimitUI();
-                }
-            } else {
-                // 3b. Just use the extracted text (the OCR prompt already formats it as LaTeX)
-                resultFinal = extracted;
+            // Increment rate limit on successful solve (default mode only)
+            if (state.mode === 'default') {
+                await incrementRateLimit();
+                updateRateLimitUI();
             }
 
-            // 4. Write to clipboard via server (avoids Chrome focus restriction)
+            // 4. Write to clipboard via server
             await setClipboardViaServer(resultFinal);
             showResult(resultFinal, extracted);
 
@@ -589,6 +597,90 @@ document.addEventListener('DOMContentLoaded', async () => {
         } catch (e) {
             // Fallback to browser API if server is unreachable
             try { await navigator.clipboard.writeText(text); } catch {}
+        }
+    }
+
+    // ── Standalone AI Chat Logic ────────────────────────────
+    function updateModeUI() {
+        if (modeChat.checked) {
+            screenshotBtnText.textContent = 'Open Chat';
+            screenshotBtnIcon.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
+        } else {
+            screenshotBtnText.textContent = 'Take Screenshot';
+            screenshotBtnIcon.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>`;
+        }
+    }
+
+    modeSolve.addEventListener('change', updateModeUI);
+    modeChat.addEventListener('change', updateModeUI);
+
+    async function submitChatMessage(text) {
+        if (!text.trim()) return;
+
+        const state = await loadUserState();
+        const { provider, apiKey } = getProviderAndKey(state);
+
+        // Hide empty state if present
+        const emptyState = standaloneChatMessages.querySelector('.history-empty');
+        if (emptyState) emptyState.remove();
+
+        // Add user message
+        const userMsg = document.createElement('div');
+        userMsg.className = 'chat-message user-message';
+        userMsg.textContent = text;
+        standaloneChatMessages.appendChild(userMsg);
+
+        standaloneChatInput.value = '';
+        standaloneChatInput.style.height = 'auto';
+        standaloneChatSendBtn.disabled = true;
+        standaloneChatInput.disabled = true;
+
+        chatMemory.push({ role: 'user', text });
+
+        // Add AI thinking message
+        const aiMsg = document.createElement('div');
+        aiMsg.className = 'chat-message ai-message';
+        aiMsg.textContent = 'Thinking...';
+        standaloneChatMessages.appendChild(aiMsg);
+        
+        standaloneChatMessages.scrollTop = standaloneChatMessages.scrollHeight;
+
+        try {
+            let ocrContext = '';
+            let solutionContext = '';
+
+            if (chatUseScreenshot.checked) {
+                ocrContext = currentOcrText || '';
+                solutionContext = currentResult || '';
+            }
+
+            const askResp = await fetch(API.ASK, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    question: text,
+                    ocrText: ocrContext,
+                    solutionText: solutionContext,
+                    provider,
+                    apiKey
+                })
+            });
+
+            if (!askResp.ok) throw new Error(`Server error ${askResp.status}`);
+            const askData = await askResp.json();
+            if (askData.error) throw new Error(askData.error);
+
+            renderMath(askData.answer, aiMsg);
+            chatMemory.push({ role: 'ai', text: askData.answer });
+
+        } catch (e) {
+            aiMsg.textContent = 'Error: ' + e.message;
+            aiMsg.style.color = '#fa5252';
+        } finally {
+            standaloneChatSendBtn.disabled = false;
+            standaloneChatInput.disabled = false;
+            standaloneChatInput.focus();
+            standaloneChatMessages.scrollTop = standaloneChatMessages.scrollHeight;
         }
     }
 
@@ -784,13 +876,58 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // ── Buttons ───────────────────────────────────────────────
-    screenshotBtn.addEventListener('click', takeAndProcess);
+    screenshotBtn.addEventListener('click', () => {
+        if (modeChat.checked) {
+            showScreen('chat');
+            standaloneChatInput.focus();
+        } else {
+            takeAndProcess();
+        }
+    });
     screenshotBtn2.addEventListener('click', takeAndProcess);
     backBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); showScreen('home'); });
     settingsBtn.addEventListener('click', () => { loadSettingsUI(); showScreen('settings'); });
     settingsBackBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); showScreen('home'); });
     historyBtn.addEventListener('click', loadHistoryUI);
     historyBackBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); showScreen('home'); });
+
+    // AI Chat UI listeners
+    chatBackBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); showScreen('home'); });
+    chatNewBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        chatMemory = [];
+        standaloneChatMessages.innerHTML = `
+            <div class="history-empty" style="margin-top: auto; margin-bottom: auto; padding: 20px;">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-muted); opacity: 0.5;"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                <span>Ask anything!</span>
+                <span style="font-size: 0.7rem; text-align: center;">I can help with math, coding, science, and more.</span>
+            </div>
+        `;
+        standaloneChatInput.value = '';
+        standaloneChatInput.style.height = 'auto';
+        standaloneChatInput.focus();
+    });
+
+    standaloneChatSendBtn.addEventListener('click', () => submitChatMessage(standaloneChatInput.value));
+    
+    standaloneChatInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            submitChatMessage(standaloneChatInput.value);
+        }
+    });
+
+    standaloneChatInput.addEventListener('input', () => {
+        standaloneChatInput.style.height = 'auto';
+        standaloneChatInput.style.height = (standaloneChatInput.scrollHeight) + 'px';
+    });
+
+    standaloneActionBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            standaloneChatInput.value = btn.textContent;
+            submitChatMessage(standaloneChatInput.value);
+        });
+    });
 
     // Upgrade buttons
     homeUpgradeBtn.addEventListener('click', () => window.open('https://buy.stripe.com/', '_blank'));
