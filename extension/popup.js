@@ -139,9 +139,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // ── Rate limiting (default mode only) ────────────────────
+    function getLocalDateString() {
+        const d = new Date();
+        return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+    }
+
     async function getRateLimit() {
         const data = await chrome.storage.local.get(['dailyCount', 'lastReset']);
-        const today = new Date().toISOString().split('T')[0];
+        const today = getLocalDateString();
         if (data.lastReset !== today) {
             await chrome.storage.local.set({ dailyCount: 0, lastReset: today });
             return 0;
@@ -151,7 +156,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function incrementRateLimit() {
         const count = await getRateLimit();
-        const today = new Date().toISOString().split('T')[0];
+        const today = getLocalDateString();
         await chrome.storage.local.set({ dailyCount: count + 1, lastReset: today });
         return count + 1;
     }
