@@ -37,6 +37,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const standaloneChatInput    = document.getElementById('standalone-chat-input');
     const standaloneChatSendBtn  = document.getElementById('standalone-chat-send-btn');
     const chatUseScreenshot      = document.getElementById('chat-use-screenshot');
+    const chatScreenshotLabel    = document.getElementById('chat-screenshot-label');
     const standaloneActionBtns   = document.querySelectorAll('.standalone-action');
 
     // Settings elements
@@ -906,6 +907,75 @@ document.addEventListener('DOMContentLoaded', async () => {
         standaloneChatInput.value = '';
         standaloneChatInput.style.height = 'auto';
         standaloneChatInput.focus();
+
+        // Visual feedback
+        const origHTML = chatNewBtn.innerHTML;
+        chatNewBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+        chatNewBtn.style.color = 'var(--success)';
+        chatNewBtn.style.borderColor = 'var(--success)';
+        setTimeout(() => {
+            chatNewBtn.innerHTML = origHTML;
+            chatNewBtn.style.color = '';
+            chatNewBtn.style.borderColor = '';
+        }, 1500);
+    });
+
+    chatUseScreenshot.addEventListener('change', async () => {
+        if (chatUseScreenshot.checked) {
+            if (!currentOcrText && !currentResult) {
+                // We need to trigger a background snip because they toggled it but have no context
+                chatUseScreenshot.disabled = true;
+                const origText = chatScreenshotLabel.textContent;
+                chatScreenshotLabel.textContent = 'Waiting for snip...';
+                
+                try {
+                    const snipResp = await fetch(API.SNIP, {
+                        method: 'POST',
+                        signal: AbortSignal.timeout(35000)
+                    });
+                    if (!snipResp.ok) throw new Error('Snip cancelled');
+                    const snipData = await snipResp.json();
+                    if (snipData.error) throw new Error(snipData.error);
+
+                    chatScreenshotLabel.textContent = 'Processing context...';
+
+                    const state = await loadUserState();
+                    const { provider, apiKey } = getProviderAndKey(state);
+
+                    const ocrResp = await fetch(API.OCR, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ image: snipData.image, provider, apiKey })
+                    });
+                    if (!ocrResp.ok) throw new Error('OCR failed');
+                    const ocrData = await ocrResp.json();
+                    
+                    currentOcrText = ocrData.ParsedResults?.[0]?.ParsedText || '';
+                    currentResult = ''; // No solution, just raw OCR
+                    
+                    chatScreenshotLabel.textContent = 'Screenshot attached ✓';
+                    chatScreenshotLabel.style.color = 'var(--success)';
+                    setTimeout(() => {
+                        chatScreenshotLabel.textContent = origText;
+                        chatScreenshotLabel.style.color = '';
+                    }, 2500);
+                } catch (e) {
+                    chatUseScreenshot.checked = false;
+                    chatScreenshotLabel.textContent = origText;
+                } finally {
+                    chatUseScreenshot.disabled = false;
+                }
+            } else {
+                // Already have context
+                const origText = chatScreenshotLabel.textContent;
+                chatScreenshotLabel.textContent = 'Screenshot attached ✓';
+                chatScreenshotLabel.style.color = 'var(--success)';
+                setTimeout(() => {
+                    chatScreenshotLabel.textContent = origText;
+                    chatScreenshotLabel.style.color = '';
+                }, 2000);
+            }
+        }
     });
 
     standaloneChatSendBtn.addEventListener('click', () => submitChatMessage(standaloneChatInput.value));
