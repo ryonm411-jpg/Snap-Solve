@@ -613,6 +613,10 @@ body {
     transform: none;
 }
 
+.attach-menu-item:hover {
+    background: #f1f3f5 !important;
+}
+
 /* ── Settings Screen ───────────────────────────────────── */
 .settings-group {
     display: flex;

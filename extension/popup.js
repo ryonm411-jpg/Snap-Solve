@@ -36,9 +36,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const standaloneChatMessages = document.getElementById('standalone-chat-messages');
     const standaloneChatInput    = document.getElementById('standalone-chat-input');
     const standaloneChatSendBtn  = document.getElementById('standalone-chat-send-btn');
-    const chatUseScreenshot      = document.getElementById('chat-use-screenshot');
-    const chatScreenshotLabel    = document.getElementById('chat-screenshot-label');
-    const standaloneActionBtns   = document.querySelectorAll('.standalone-action');
+    const chatAttachBtn          = document.getElementById('chat-attach-btn');
+    const chatAttachMenu         = document.getElementById('chat-attach-menu');
+    const menuUploadBtn          = document.getElementById('menu-upload-btn');
+    const menuSnipBtn            = document.getElementById('menu-snip-btn');
+    const chatFileUpload         = document.getElementById('chat-file-upload');
+    const chatContextChip        = document.getElementById('chat-context-chip');
+    const chatContextChipText    = document.getElementById('chat-context-chip-text');
+    const chatContextClearBtn    = document.getElementById('chat-context-clear-btn');
 
     // Settings elements
     const settingsBackBtn  = document.getElementById('settings-back-btn');
@@ -652,13 +657,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         standaloneChatMessages.scrollTop = standaloneChatMessages.scrollHeight;
 
         try {
-            let ocrContext = '';
-            let solutionContext = '';
-
-            if (chatUseScreenshot.checked) {
-                ocrContext = currentOcrText || '';
-                solutionContext = currentResult || '';
-            }
+            let ocrContext = currentOcrText || '';
+            let solutionContext = currentResult || '';
 
             const askResp = await fetch(API.ASK, {
                 method: 'POST',
@@ -925,61 +925,107 @@ document.addEventListener('DOMContentLoaded', async () => {
         }, 1500);
     });
 
-    chatUseScreenshot.addEventListener('change', async () => {
-        if (chatUseScreenshot.checked) {
-            if (!currentOcrText && !currentResult) {
-                // We need to trigger a background snip because they toggled it but have no context
-                chatUseScreenshot.disabled = true;
-                const origText = chatScreenshotLabel.textContent;
-                chatScreenshotLabel.textContent = 'Waiting for snip...';
+    // -- Context UI functions --
+    function showContextChip(text = 'Image Attached') {
+        chatContextChipText.textContent = text;
+        chatContextChip.style.display = 'flex';
+    }
+    
+    function hideContextChip() {
+        chatContextChip.style.display = 'none';
+        currentOcrText = '';
+        currentResult = '';
+    }
+
+    chatContextClearBtn.addEventListener('click', hideContextChip);
+
+    // -- Attach Menu logic --
+    chatAttachBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        chatAttachMenu.style.display = chatAttachMenu.style.display === 'none' ? 'block' : 'none';
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!chatAttachMenu.contains(e.target) && e.target !== chatAttachBtn) {
+            chatAttachMenu.style.display = 'none';
+        }
+    });
+
+    // Handle "Upload photos & files"
+    menuUploadBtn.addEventListener('click', () => {
+        chatAttachMenu.style.display = 'none';
+        chatFileUpload.click();
+    });
+
+    chatFileUpload.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        showContextChip('Processing Image...');
+        
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+            const base64Image = reader.result.split(',')[1];
+            try {
+                const state = await loadUserState();
+                const { provider, apiKey } = getProviderAndKey(state);
+
+                const ocrResp = await fetch(API.OCR, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: base64Image, provider, apiKey })
+                });
+                if (!ocrResp.ok) throw new Error('OCR failed');
+                const ocrData = await ocrResp.json();
                 
-                try {
-                    const snipResp = await fetch(API.SNIP, {
-                        method: 'POST',
-                        signal: AbortSignal.timeout(35000)
-                    });
-                    if (!snipResp.ok) throw new Error('Snip cancelled');
-                    const snipData = await snipResp.json();
-                    if (snipData.error) throw new Error(snipData.error);
-
-                    chatScreenshotLabel.textContent = 'Processing context...';
-
-                    const state = await loadUserState();
-                    const { provider, apiKey } = getProviderAndKey(state);
-
-                    const ocrResp = await fetch(API.OCR, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ image: snipData.image, provider, apiKey })
-                    });
-                    if (!ocrResp.ok) throw new Error('OCR failed');
-                    const ocrData = await ocrResp.json();
-                    
-                    currentOcrText = ocrData.ParsedResults?.[0]?.ParsedText || '';
-                    currentResult = ''; // No solution, just raw OCR
-                    
-                    chatScreenshotLabel.textContent = 'Screenshot attached ✓';
-                    chatScreenshotLabel.style.color = 'var(--success)';
-                    setTimeout(() => {
-                        chatScreenshotLabel.textContent = origText;
-                        chatScreenshotLabel.style.color = '';
-                    }, 2500);
-                } catch (e) {
-                    chatUseScreenshot.checked = false;
-                    chatScreenshotLabel.textContent = origText;
-                } finally {
-                    chatUseScreenshot.disabled = false;
-                }
-            } else {
-                // Already have context
-                const origText = chatScreenshotLabel.textContent;
-                chatScreenshotLabel.textContent = 'Screenshot attached ✓';
-                chatScreenshotLabel.style.color = 'var(--success)';
-                setTimeout(() => {
-                    chatScreenshotLabel.textContent = origText;
-                    chatScreenshotLabel.style.color = '';
-                }, 2000);
+                currentOcrText = ocrData.ParsedResults?.[0]?.ParsedText || '';
+                currentResult = '';
+                
+                showContextChip('Image Attached');
+            } catch (err) {
+                hideContextChip();
+                const orig = standaloneChatInput.placeholder;
+                standaloneChatInput.placeholder = 'Failed to process image';
+                setTimeout(() => standaloneChatInput.placeholder = orig, 2000);
             }
+            chatFileUpload.value = '';
+        };
+        reader.readAsDataURL(file);
+    });
+
+    // Handle "Take Screenshot"
+    menuSnipBtn.addEventListener('click', async () => {
+        chatAttachMenu.style.display = 'none';
+        showContextChip('Waiting for snip...');
+        
+        try {
+            const snipResp = await fetch(API.SNIP, {
+                method: 'POST',
+                signal: AbortSignal.timeout(35000)
+            });
+            if (!snipResp.ok) throw new Error('Snip cancelled');
+            const snipData = await snipResp.json();
+            if (snipData.error) throw new Error(snipData.error);
+
+            showContextChip('Processing context...');
+
+            const state = await loadUserState();
+            const { provider, apiKey } = getProviderAndKey(state);
+
+            const ocrResp = await fetch(API.OCR, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: snipData.image, provider, apiKey })
+            });
+            if (!ocrResp.ok) throw new Error('OCR failed');
+            const ocrData = await ocrResp.json();
+            
+            currentOcrText = ocrData.ParsedResults?.[0]?.ParsedText || '';
+            currentResult = ''; 
+            
+            showContextChip('Screenshot Attached');
+        } catch (e) {
+            hideContextChip();
         }
     });
 
@@ -995,13 +1041,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     standaloneChatInput.addEventListener('input', () => {
         standaloneChatInput.style.height = 'auto';
         standaloneChatInput.style.height = (standaloneChatInput.scrollHeight) + 'px';
-    });
-
-    standaloneActionBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            standaloneChatInput.value = btn.textContent;
-            submitChatMessage(standaloneChatInput.value);
-        });
     });
 
     // Upgrade buttons

@@ -193,24 +193,34 @@
             </div>
         </div>
 
-        <div class="chat-bottom-area" style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
-            <div class="chat-quick-actions" style="padding-bottom: 2px;">
-                <button class="quick-action-btn standalone-action">Explain this</button>
-                <button class="quick-action-btn standalone-action">Summarize</button>
-                <button class="quick-action-btn standalone-action">Debug code</button>
-                <button class="quick-action-btn standalone-action">Give hints</button>
+        <div class="chat-bottom-area" style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px; position: relative;">
+            
+            <input type="file" id="chat-file-upload" accept="image/*" style="display: none;">
+
+            <div id="chat-attach-menu" class="chat-attach-menu" style="display: none; position: absolute; bottom: 50px; left: 0; background: white; border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); padding: 6px; z-index: 100; min-width: 180px;">
+                <button id="menu-upload-btn" class="attach-menu-item" style="display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 12px; background: none; border: none; font-family: 'Inter', sans-serif; font-size: 0.85rem; color: var(--text); cursor: pointer; border-radius: 6px; text-align: left; transition: background 0.15s ease;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    Upload photos & files
+                </button>
+                <button id="menu-snip-btn" class="attach-menu-item" style="display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 12px; background: none; border: none; font-family: 'Inter', sans-serif; font-size: 0.85rem; color: var(--text); cursor: pointer; border-radius: 6px; text-align: left; transition: background 0.15s ease;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v18H3z"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
+                    Take Screenshot
+                </button>
             </div>
 
-            <label class="screenshot-context-toggle" style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.75rem; color: var(--text-muted); user-select: none;">
-                <div class="toggle-switch" style="transform: scale(0.7); transform-origin: left center;">
-                    <input type="checkbox" id="chat-use-screenshot">
-                    <span class="toggle-slider"></span>
-                </div>
-                <span id="chat-screenshot-label">Use Current Screenshot</span>
-            </label>
+            <div id="chat-context-chip" style="display: none; align-items: center; gap: 6px; padding: 4px 8px; background: #eef2ff; border: 1px solid rgba(59, 91, 219, 0.2); border-radius: 6px; width: fit-content; font-size: 0.75rem; color: var(--primary); font-weight: 500;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                <span id="chat-context-chip-text">Image Attached</span>
+                <button id="chat-context-clear-btn" style="background: none; border: none; color: inherit; cursor: pointer; padding: 0 2px; margin-left: 4px; display: flex; align-items: center;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
 
-            <div class="chat-input-container">
-                <textarea id="standalone-chat-input" placeholder="Ask anything..." rows="1" style="resize: none; width: 100%; border: none; outline: none; font-family: 'Inter', sans-serif; font-size: 0.85rem; color: var(--text); padding: 4px 0; max-height: 120px;"></textarea>
+            <div class="chat-input-container" style="position: relative; padding-left: 4px;">
+                <button id="chat-attach-btn" style="width: 30px; height: 30px; border-radius: 50%; background: none; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-muted); transition: all 0.2s ease;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                </button>
+                <textarea id="standalone-chat-input" placeholder="Ask anything..." rows="1" style="resize: none; width: 100%; border: none; outline: none; font-family: 'Inter', sans-serif; font-size: 0.85rem; color: var(--text); padding: 6px 4px; max-height: 120px;"></textarea>
                 <button id="standalone-chat-send-btn" class="chat-send-btn">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                 </button>
