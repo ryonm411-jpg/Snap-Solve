@@ -648,6 +648,24 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         chatMemory.push({ role: 'user', text });
 
+        if (!currentSessionId) {
+            currentSessionId = generateId();
+            await addSession({
+                id: currentSessionId,
+                timestamp: Date.now(),
+                image: '', 
+                ocrText: text,
+                solution: '',
+                isChat: true,
+                messages: [{ role: 'user', text }]
+            });
+        } else {
+            await updateSession(currentSessionId, s => {
+                if (!s.messages) s.messages = [];
+                s.messages.push({ role: 'user', text });
+            });
+        }
+
         // Add AI thinking message
         const aiMsg = document.createElement('div');
         aiMsg.className = 'chat-message ai-message';
@@ -678,6 +696,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             renderMath(askData.answer, aiMsg);
             chatMemory.push({ role: 'ai', text: askData.answer });
+
+            if (currentSessionId) {
+                await updateSession(currentSessionId, s => {
+                    if (!s.messages) s.messages = [];
+                    s.messages.push({ role: 'ai', text: askData.answer });
+                });
+            }
 
         } catch (e) {
             aiMsg.textContent = 'Error: ' + e.message;
@@ -715,15 +740,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             const diffMin = Math.floor((now - session.timestamp) / 60000);
             let timeStr = diffMin < 1 ? 'Just now' : diffMin < 60 ? `${diffMin} min ago` : diffMin < 1440 ? `${Math.floor(diffMin/60)} hrs ago` : `${Math.floor(diffMin/1440)} days ago`;
 
-            // Strip markdown/latex for preview
-            const plainPreview = (session.solution || session.ocrText || '').replace(/[#$*_]/g, '').trim();
+            const plainPreview = (session.isChat ? session.ocrText : (session.solution || session.ocrText || '')).replace(/[#$*_]/g, '').trim();
+
+            const icon = session.isChat 
+                ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' 
+                : '∑';
+
+            const typeLabel = session.isChat ? 'AI Chat' : 'Step-by-Step';
 
             el.innerHTML = `
-                <div class="history-card-icon">∑</div>
+                <div class="history-card-icon" style="${session.isChat ? 'background: #f1f3f5; color: #495057; font-family: inherit;' : ''}">${icon}</div>
                 <div class="history-card-body">
                     <span class="history-card-preview">${plainPreview}</span>
                     <div class="history-card-meta">
-                        <span>Step-by-Step</span>
+                        <span>${typeLabel}</span>
                         <span class="dot"></span>
                         <span>${timeStr}</span>
                     </div>
@@ -737,33 +767,61 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function loadSession(session) {
-        showScreen('result');
         currentSessionId = session.id;
-        currentMode = 'solve';
-        currentOcrText = session.ocrText;
         
-        resultModeTag.textContent = 'Saved Problem';
-        resultStatus.textContent = '';
-        
-        // Show result
-        showResult(session.solution, session.ocrText);
-        
-        // Render chat messages
-        chatMessages.innerHTML = '';
-        if (session.messages && session.messages.length > 0) {
-            session.messages.forEach(msg => {
-                const bubble = document.createElement('div');
-                bubble.className = `chat-message ${msg.role}-message`;
-                if (msg.role === 'ai') {
-                    renderMath(msg.text, bubble);
-                } else {
-                    bubble.textContent = msg.text;
-                }
-                chatMessages.appendChild(bubble);
-            });
+        if (session.isChat) {
+            showScreen('chat');
+            currentMode = 'chat';
+            
+            chatMemory = session.messages || [];
+            standaloneChatMessages.innerHTML = '';
+            
+            if (chatMemory.length === 0) {
+                standaloneChatMessages.innerHTML = `
+                    <div class="history-empty" style="margin-top: auto; margin-bottom: auto; padding: 20px;">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-muted); opacity: 0.5;"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                        <span>Ask anything!</span>
+                        <span style="font-size: 0.7rem; text-align: center;">I can help with math, coding, science, and more.</span>
+                    </div>
+                `;
+            } else {
+                chatMemory.forEach(msg => {
+                    const bubble = document.createElement('div');
+                    bubble.className = `chat-message ${msg.role}-message`;
+                    if (msg.role === 'ai') {
+                        renderMath(msg.text, bubble);
+                    } else {
+                        bubble.textContent = msg.text;
+                    }
+                    standaloneChatMessages.appendChild(bubble);
+                });
+                setTimeout(() => standaloneChatMessages.scrollTop = standaloneChatMessages.scrollHeight, 10);
+            }
+        } else {
+            showScreen('result');
+            currentMode = 'solve';
+            currentOcrText = session.ocrText;
+            
+            resultModeTag.textContent = 'Saved Problem';
+            resultStatus.textContent = '';
+            
+            showResult(session.solution, session.ocrText);
+            
+            chatMessages.innerHTML = '';
+            if (session.messages && session.messages.length > 0) {
+                session.messages.forEach(msg => {
+                    const bubble = document.createElement('div');
+                    bubble.className = `chat-message ${msg.role}-message`;
+                    if (msg.role === 'ai') {
+                        renderMath(msg.text, bubble);
+                    } else {
+                        bubble.textContent = msg.text;
+                    }
+                    chatMessages.appendChild(bubble);
+                });
+            }
+            chatMessages.scrollTop = chatMessages.scrollHeight;
         }
-        
-        chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
     // ── Settings logic ───────────────────────────────────────
@@ -902,6 +960,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     chatNewBtn.addEventListener('click', (e) => {
         e.preventDefault();
         chatMemory = [];
+        currentSessionId = null;
         standaloneChatMessages.innerHTML = `
             <div class="history-empty" style="margin-top: auto; margin-bottom: auto; padding: 20px;">
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-muted); opacity: 0.5;"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
