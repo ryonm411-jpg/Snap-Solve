@@ -1,0 +1,17 @@
+[33mcommit 66bcbbc5c6c8e1d7026f1da03bc36ad255c56379[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m
+Author: Dev <dev@snapsolve.test>
+Date:   Sun May 3 18:12:00 2026 -0700
+
+    [chore]: ignore deprecated extension directory
+
+[33mcommit 1c0bd1651cad4f1eafaec1e9ce28a6d7cc04e4c4[m
+Author: Dev <dev@snapsolve.test>
+Date:   Sun May 3 17:24:38 2026 -0700
+
+    [refactor]: abstract API providers and implement BYOK routing
+
+[33mcommit 7e3f2a141f587d714350401c35500ff9e588c781[m
+Author: Dev <dev@snapsolve.test>
+Date:   Sun May 3 17:24:23 2026 -0700
+
+    [fix]: prevent duplicate clipboard processing and memory leak

@@ -5,309 +5,41 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SnapSolve</title>
     <link rel="stylesheet" href="popup.css">
-    <link rel="stylesheet" href="katex/katex.min.css">
-    <link rel="stylesheet" href="highlight.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-
-    <!-- KaTeX and Highlight.js (local bundles) -->
-    <script src="katex/katex.min.js"></script>
-    <script src="katex/auto-render.min.js"></script>
-    <script src="highlight.min.js"></script>
-
-    <!-- ── Screen 0: Onboarding (first-time users) ──────── -->
-    <div id="screen-onboarding" class="screen">
-        <div class="onboard-hero">
-            <div class="onboard-logo">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M2 8V4a2 2 0 012-2h4M16 2h4a2 2 0 012 2v4M22 16v4a2 2 0 01-2 2h-4M8 22H4a2 2 0 01-2-2v-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    <path d="M15 7H9.5L12 12l-2.5 5H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <div class="popup-container">
+        <div class="popup-header">
+            <div class="popup-logo">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <path d="M2 8V4a2 2 0 012-2h4M16 2h4a2 2 0 012 2v4M22 16v4a2 2 0 01-2 2h-4M8 22H4a2 2 0 01-2-2v-4"/>
+                    <path d="M15 7H9.5L12 12l-2.5 5H15" stroke-linejoin="round"/>
                 </svg>
             </div>
-            <h2 class="onboard-title">Welcome to SnapSolve!</h2>
-            <p class="onboard-subtitle">Screenshot any math problem and get instant step-by-step solutions.</p>
+            <span class="popup-title">SnapSolve</span>
+            <div id="status-dot" class="status-dot" title="Idle"></div>
         </div>
 
-        <button id="onboard-free-btn" class="onboard-btn onboard-btn-primary">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-            Start Free (10 solves/day)
+        <button id="workspace-btn" class="popup-btn popup-btn-primary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            Open Workspace
         </button>
 
-        <div class="onboard-divider">
-            <span>or bring your own API key</span>
-        </div>
-
-        <div class="onboard-byok-section">
-            <label class="onboard-field-label" for="onboard-provider">Provider</label>
-            <select id="onboard-provider" class="settings-select onboard-select">
-                <option value="openai">OpenAI (GPT-4o-mini)</option>
-                <option value="claude">Claude (Sonnet)</option>
-                <option value="gemini">Gemini (Flash)</option>
-                <option value="deepseek">DeepSeek (V3 Chat)</option>
-            </select>
-
-            <label class="onboard-field-label" for="onboard-api-key">API Key</label>
-            <input type="password" id="onboard-api-key" class="settings-input onboard-input" placeholder="sk-... or your key">
-
-            <button id="onboard-save-key-btn" class="onboard-btn onboard-btn-key">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 010-7.778zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
-                Save API Key
-            </button>
-        </div>
-
-        <div class="onboard-footer">
-            <p class="onboard-footer-text">Need help? Visit <a href="https://github.com/ryonm411-jpg/Snap-Solve" target="_blank">our GitHub</a></p>
-            <p class="onboard-footer-hint">You can change this later in Settings.</p>
-        </div>
-    </div>
-
-    <!-- ── Screen 1: Home (mode select) ───────────────────── -->
-    <div id="screen-home" class="screen">
-        <div class="header">
-            <div class="logo">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <!-- Crosshair corners -->
-                    <path d="M2 8V4a2 2 0 012-2h4M16 2h4a2 2 0 012 2v4M22 16v4a2 2 0 01-2 2h-4M8 22H4a2 2 0 01-2-2v-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    <!-- Sigma symbol -->
-                    <path d="M15 7H9.5L12 12l-2.5 5H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-            </div>
-            <h1>SnapSolve</h1>
-            <button id="history-btn" class="btn-icon" title="History" style="margin-left:auto;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            </button>
-            <button id="settings-btn" class="btn-icon" title="Settings">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-            </button>
-        </div>
-
-        <div class="mode-list">
-            <label class="mode-card">
-                <input type="radio" name="mode" value="solve" id="mode-solve" checked>
-                <div class="mode-info">
-                    <span class="mode-title">Step-by-Step</span>
-                    <span class="mode-desc">Solve &amp; explain the problem in detail</span>
-                </div>
-                <div class="mode-radio-indicator"><span class="radio-dot"></span></div>
-            </label>
-
-            <label class="mode-card">
-                <input type="radio" name="mode" value="chat" id="mode-chat">
-                <div class="mode-info">
-                    <span class="mode-title">AI Chat</span>
-                    <span class="mode-desc">Ask anything, with or without screenshots</span>
-                </div>
-                <div class="mode-radio-indicator"><span class="radio-dot"></span></div>
-            </label>
-        </div>
-
-        <button id="screenshot-btn" class="btn-screenshot">
-            <span id="screenshot-btn-icon">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-            </span>
-            <span id="screenshot-btn-text">Take Screenshot</span>
+        <button id="paste-btn" class="popup-btn popup-btn-secondary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+            Paste &amp; Solve
         </button>
-        <p class="shortcut-hint">Use <kbd>Alt+Shift+S</kbd> to take screenshot faster</p>
 
-        <div id="rate-limit-bar" class="rate-limit-bar" style="display:none;">
-            <span id="rate-limit-text">0/10 free solves today</span>
-            <div class="rate-limit-track"><div id="rate-limit-fill" class="rate-limit-fill"></div></div>
-        </div>
-
-        <!-- Upgrade nudge (default mode only) -->
-        <div id="home-upgrade-nudge" class="upgrade-nudge" style="display:none;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-            <span>Want unlimited solves?</span>
-            <button id="home-upgrade-btn" class="upgrade-link-btn">Upgrade to Pro →</button>
+        <div class="popup-footer">
+            <div class="shortcut-badge">
+                <kbd>Alt+Shift+S</kbd>
+            </div>
+            <button id="settings-btn" class="popup-icon-btn" title="Settings">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+            </button>
         </div>
     </div>
 
-    <!-- ── Screen 2: Result ────────────────────────────────── -->
-    <div id="screen-result" class="screen">
-        <div class="result-header">
-            <button id="back-btn" class="btn-icon" title="Back">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-            </button>
-            <h1>SnapSolve</h1>
-            <button id="copy-result-btn" class="btn-icon" title="Copy result">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-            </button>
-        </div>
-
-        <span id="result-mode-tag" class="mode-tag"></span>
-
-        <div id="result-loading" class="loading-state">
-            <div class="spinner"></div>
-            <span id="result-loading-text">Opening snipping tool...</span>
-        </div>
-
-        <!-- KaTeX-rendered math output -->
-        <div id="result-content" class="result-content" style="display:none;">
-            <div id="result-rendered" class="result-rendered"></div>
-        </div>
-
-        <!-- Chat container (Follow-Up Questions) -->
-        <div id="chat-container" class="chat-container" style="display:none;">
-            <div id="chat-messages" class="chat-messages"></div>
-            <div class="chat-quick-actions">
-                <button class="quick-action-btn">Explain step</button>
-                <button class="quick-action-btn">Why?</button>
-                <button class="quick-action-btn">Hint</button>
-            </div>
-            <div class="chat-input-container">
-                <input id="chat-input" type="text" placeholder="Ask about this problem..." autocomplete="off" />
-                <button id="chat-send-btn" class="chat-send-btn">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                </button>
-            </div>
-        </div>
-
-        <div id="result-status" class="status"></div>
-
-        <button id="screenshot-btn-2" class="btn-screenshot">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-            Take Another Screenshot
-        </button>
-        <p class="shortcut-hint">Use <kbd>Alt+Shift+S</kbd> to take screenshot faster</p>
-    </div>
-
-    <!-- ── Screen 5: AI Chat ───────────────────────────────── -->
-    <div id="screen-chat" class="screen">
-        <div class="result-header">
-            <button id="chat-back-btn" class="btn-icon" title="Back">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-            </button>
-            <h1>AI Chat</h1>
-            <button id="chat-new-btn" class="btn-icon" title="New Chat" style="margin-left: auto;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            </button>
-        </div>
-
-        <div id="standalone-chat-messages" class="chat-messages" style="flex: 1; max-height: none; overflow-y: auto;">
-            <!-- Chat bubbles go here -->
-            <div class="history-empty" style="margin-top: auto; margin-bottom: auto; padding: 20px;">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-muted); opacity: 0.5;"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-                <span>Ask anything!</span>
-                <span style="font-size: 0.7rem; text-align: center;">I can help with math, coding, science, and more.</span>
-            </div>
-        </div>
-
-        <div class="chat-bottom-area" style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px; position: relative;">
-            
-            <input type="file" id="chat-file-upload" accept="image/*" style="display: none;">
-
-            <div id="chat-attach-menu" class="chat-attach-menu" style="display: none; position: absolute; bottom: 50px; left: 0; background: white; border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); padding: 6px; z-index: 100; min-width: 180px;">
-                <button id="menu-upload-btn" class="attach-menu-item" style="display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 12px; background: none; border: none; font-family: 'Inter', sans-serif; font-size: 0.85rem; color: var(--text); cursor: pointer; border-radius: 6px; text-align: left; transition: background 0.15s ease;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                    Upload photos & files
-                </button>
-                <button id="menu-snip-btn" class="attach-menu-item" style="display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 12px; background: none; border: none; font-family: 'Inter', sans-serif; font-size: 0.85rem; color: var(--text); cursor: pointer; border-radius: 6px; text-align: left; transition: background 0.15s ease;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v18H3z"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
-                    Take Screenshot
-                </button>
-            </div>
-
-            <div id="chat-context-chip" style="display: none; align-items: center; gap: 6px; padding: 4px 8px; background: #eef2ff; border: 1px solid rgba(59, 91, 219, 0.2); border-radius: 6px; width: fit-content; font-size: 0.75rem; color: var(--primary); font-weight: 500;">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                <span id="chat-context-chip-text">Image Attached</span>
-                <button id="chat-context-clear-btn" style="background: none; border: none; color: inherit; cursor: pointer; padding: 0 2px; margin-left: 4px; display: flex; align-items: center;">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                </button>
-            </div>
-
-            <div class="chat-input-container" style="position: relative; padding-left: 4px;">
-                <button id="chat-attach-btn" style="width: 30px; height: 30px; border-radius: 50%; background: none; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-muted); transition: all 0.2s ease;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                </button>
-                <textarea id="standalone-chat-input" placeholder="Ask anything..." rows="1" style="resize: none; width: 100%; border: none; outline: none; font-family: 'Inter', sans-serif; font-size: 0.85rem; color: var(--text); padding: 6px 4px; max-height: 120px;"></textarea>
-                <button id="standalone-chat-send-btn" class="chat-send-btn">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ── Screen 4: History ───────────────────────────────── -->
-    <div id="screen-history" class="screen">
-        <div class="result-header">
-            <button id="history-back-btn" class="btn-icon" title="Back">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-            </button>
-            <h1>Recent Problems</h1>
-        </div>
-        <div id="history-list" class="history-list">
-            <div class="history-empty">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-muted); opacity: 0.5;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                <span>No saved problems yet.</span>
-                <span style="font-size: 0.7rem;">Take a screenshot to get started!</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- ── Screen 3: Settings ──────────────────────────────── -->
-    <div id="screen-settings" class="screen">
-        <div class="result-header">
-            <button id="settings-back-btn" class="btn-icon" title="Back">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-            </button>
-            <h1>Settings</h1>
-        </div>
-
-        <!-- Default API Toggle -->
-        <div class="settings-group">
-            <div class="settings-row">
-                <span class="settings-label">Use SnapSolve Default API</span>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="toggle-default" checked>
-                    <span class="toggle-slider"></span>
-                </label>
-            </div>
-            <p class="settings-hint">Free tier — 10 solves per day</p>
-        </div>
-
-        <!-- BYOK Section -->
-        <div id="byok-section" class="settings-group byok-section" style="display:none;">
-            <p class="settings-section-title">Use Your Own API Key</p>
-
-            <label class="settings-field-label" for="provider-select">Provider</label>
-            <select id="provider-select" class="settings-select">
-                <option value="openai">OpenAI (GPT-4o-mini)</option>
-                <option value="claude">Claude (Sonnet)</option>
-                <option value="gemini">Gemini (Flash)</option>
-                <option value="deepseek">DeepSeek (V3 Chat)</option>
-            </select>
-
-            <label class="settings-field-label" for="api-key-input">API Key</label>
-            <div class="api-key-wrapper">
-                <input type="password" id="api-key-input" class="settings-input" placeholder="sk-... or your key">
-                <button id="toggle-key-vis" class="btn-icon btn-key-vis" title="Show key">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                </button>
-            </div>
-
-            <div class="settings-btn-row">
-                <button id="save-key-btn" class="btn-settings-primary">Save</button>
-                <button id="test-key-btn" class="btn-settings-secondary">Test Connection</button>
-            </div>
-        </div>
-
-        <!-- Upgrade Card -->
-        <div id="settings-upgrade-card" class="upgrade-card">
-            <div class="upgrade-card-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-            </div>
-            <div class="upgrade-card-body">
-                <span class="upgrade-card-title">SnapSolve Pro</span>
-                <span class="upgrade-card-desc">Upgrade for unlimited solves with no daily cap.</span>
-            </div>
-            <button id="settings-upgrade-btn" class="upgrade-card-btn">Upgrade</button>
-        </div>
-
-        <div id="settings-status" class="status"></div>
-    </div>
-
-    <!-- App logic -->
-    <script type="module" src="popup.js"></script>
+    <script src="popup.js" type="module"></script>
 </body>
 </html>

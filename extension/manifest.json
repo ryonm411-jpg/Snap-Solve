@@ -1,19 +1,25 @@
 {
   "manifest_version": 3,
   "name": "SnapSolve",
-  "version": "2.0",
+  "version": "3.0",
   "description": "Snap a screenshot, get instant math solutions.",
   "permissions": [
+    "activeTab",
+    "tabs",
     "clipboardRead",
     "clipboardWrite",
     "offscreen",
     "notifications",
+    "scripting",
     "storage",
-    "alarms"
+    "alarms",
+    "sidePanel",
+    "windows"
   ],
   "host_permissions": [
-    "https://snapsolve-api.onrender.com/*",
-    "http://localhost:3002/*"
+    "<all_urls>",
+    "http://localhost:3000/*",
+    "https://snapsolve-api.onrender.com/*"
   ],
   "background": {
     "service_worker": "background.js",
@@ -26,6 +32,9 @@
     "default_popup": "popup.html",
     "default_icon": "icon.png",
     "default_title": "SnapSolve"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
   },
   "commands": {
     "take_screenshot": {
